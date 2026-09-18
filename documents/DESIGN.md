@@ -1,5 +1,7 @@
 # LightBox Design Notes
 
+**English** · [日本語](DESIGN_JP.md) · [← README](../README.md)
+
 CH32V003 LED Dimmer. Documenting design decisions and rationale to ensure third-party reproducibility.
 
 ## Requirements

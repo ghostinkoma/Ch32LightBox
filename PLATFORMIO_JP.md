@@ -1,7 +1,9 @@
 # LightBox を PlatformIO でビルドする
 
+[English](PLATFORMIO.md) · **日本語** · [← README](README_JP.md)
+
 > **状態**: この構成はこの環境では**未検証**です（PlatformIO 未インストール）。
-> **検証済みの標準ビルドは `source/Makefile`（[README](README.md) ①）** です。
+> **検証済みの標準ビルドは `source/Makefile`（[README](README_JP.md) ①）** です。
 > PlatformIO は利便性のための scaffold として提供します。
 
 ## 背景

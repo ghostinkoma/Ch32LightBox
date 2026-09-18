@@ -1,5 +1,7 @@
 # LightBox Specification Document (SPEC)
 
+**English** · [日本語](SPEC_JP.md) · [← README](../README.md)
+
 Functional specification for the CH32V003 LED Dimmer Controller. Architectural rationale and design decisions can be found in [DESIGN.md](DESIGN.md), and configuration references in [CONFIG_REFERENCE.md](CONFIG_REFERENCE.md).
 
 ## 1. Target & Architecture

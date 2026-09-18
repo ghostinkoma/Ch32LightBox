@@ -1,11 +1,13 @@
 # LightBox Studio — 不具合対処記録（BUGFIX）
 
+[English](BUGFIX.md) · **日本語** · [← Studio README](README_JP.md)
+
 > **総括: ✅ 実機確認済み（2026-09-18）。** `config.h編集 → コンパイル → CH32V003書込` を、
 > **ダウンロードした ch32fun 同梱 minichlink（`dist/toolchain/.../minichlink.exe`・self-contained）だけ**で
 > 実機書込成功（`Detected CH32V003 → Writing image → Image written.`）。PC内を走査しないサンドボックス、
 > 成功実績の恒久記憶（クリーン再導入耐性）まで実装・検証済み。
 
-対象: `tools/LightBoxStudio/`。ブランチ `claude/lightbox-studio-tools`。
+対象: `tools/LightBoxStudio/`（`main` に統合済み）。
 
 ---
 
@@ -84,4 +86,4 @@ PC全体の走査はしない：
 ## 残る唯一の外部要素
 新規PCで同梱 minichlink を動かす **WCH-LinkE の WinUSB ドライバ（Zadig, 初回1回）** のみソフト外。
 `Could not initialize` はドライバ、`nothing connected` は配線/電源、`Found WCH Link後にハング` は
-別ビルド選択、で切り分ける（[README](README.md) 参照）。
+別ビルド選択、で切り分ける（[README_JP.md](README_JP.md) 参照）。

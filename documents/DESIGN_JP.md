@@ -1,5 +1,7 @@
 # LightBox 設計メモ
 
+[English](DESIGN.md) · **日本語** · [← README](../README_JP.md)
+
 CH32V003 による LED 調光器。設計上の判断とその根拠を残す（第三者が再現できるように）。
 
 ## 要求

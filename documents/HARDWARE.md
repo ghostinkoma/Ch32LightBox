@@ -1,8 +1,10 @@
 # LightBox Hardware (Board / Circuit / BOM)
 
+**English** · [日本語](HARDWARE_JP.md) · [← README](../README.md)
+
 Physical PCB for the CH32V003 LED Dimmer Controller. Complete KiCad project located at:
-`D:\hobby\LightBox\PCB\LightBox\` (Schematic: `LightBox.kicad_sch` / PCB: `LightBox.kicad_pcb`).
-Artwork image: `D:\hobby\LightBox\PCB\AertWork.png`. MOSFET symbol: `PCB\KiCad\FDS5680.*`.
+`PCB/LightBox/` (Schematic: `LightBox.kicad_sch` / PCB: `LightBox.kicad_pcb`).
+Artwork image: `PCB/AertWork.png`. MOSFET symbol: `PCB/KiCad/FDS5680.*`.
 
 > PCB design, schematic design, and artwork (including pin headers) are complete. **Wiring has been verified to match the active firmware identically.**
 
@@ -97,6 +99,6 @@ Q1 Source ── GND
 
 * **★ Prototyped on 1.27mm pitch perfboard with hand-wired circuit $\rightarrow$ Operational success confirmed**.
 
-* **★ Integrated into custom 3D-printed enclosure designed in Fusion 360** (STL files located in `3D/`).
+* **★ Integrated into custom 3D-printed enclosure designed in Fusion 360** (STL files located in `3D_Models/`).
 
 * **Thermal Performance**: Although a heatsink was attached as a precaution, **virtually no heat generation was observed under a $\approx 1\text{A}$ LED load**. This confirms that previous false trips under duty-cycle-based die estimation were caused by math model discrepancies rather than physical heat, validating the decision to set `TEMP_PROTECT_ENABLE` to `0` (disabled). If thermal protection is required in the future, a physical external NTC sensor should be used.

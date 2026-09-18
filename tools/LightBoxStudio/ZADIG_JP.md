@@ -1,5 +1,7 @@
 # WCH-LinkE ドライバ設定ガイド（Zadig）
 
+[English](ZADIG.md) · **日本語** · [← Studio README](README_JP.md)
+
 CH32V003 へ書き込む minichlink は、WCH-LinkE に **WinUSB ドライバ**が割り当たっている必要があります。
 新規PCでは初回1回だけこの設定を行います（メニューの **［🔌 ドライバ(Zadig)］** からも同じ案内が出ます）。
 

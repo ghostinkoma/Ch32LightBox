@@ -1,6 +1,8 @@
 # LightBox 設定リファレンスガイド (config.h)
 
-`source/config.h` の全項目リファレンス。値を変えたら再ビルド（[README](../README.md) 参照）。
+[English](CONFIG_REFERENCE.md) · **日本語** · [← README](../README_JP.md)
+
+`source/config.h` の全項目リファレンス。値を変えたら再ビルド（[README](../README_JP.md) 参照）。
 ピンは ch32fun のピン名（`PA1`, `PC2`, `PD0` …）。
 
 ## ピン割当

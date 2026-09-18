@@ -1,7 +1,9 @@
 # LightBox 仕様書 (SPEC)
 
-CH32V003 LED 調光コントローラの機能仕様。設計判断の根拠は [DESIGN.md](DESIGN.md)、
-設定項目は [CONFIG_REFERENCE.md](CONFIG_REFERENCE.md)。
+[English](SPEC.md) · **日本語** · [← README](../README_JP.md)
+
+CH32V003 LED 調光コントローラの機能仕様。設計判断の根拠は [DESIGN_JP.md](DESIGN_JP.md)、
+設定項目は [CONFIG_REFERENCE_JP.md](CONFIG_REFERENCE_JP.md)。
 
 ## 1. 対象・構成
 - MCU: CH32V003（推奨パッケージ **F4P6 TSSOP20**。SOP8 はコア機能のみ）
@@ -135,4 +137,4 @@ CH32V003 LED 調光コントローラの機能仕様。設計判断の根拠は 
 - ホスト検証済: CIE、状態機械、ストア境界、常夜灯カーブ、色順、加速、熱モデル。
 - ビルド検証済: 全機能組合せで警告ゼロ、Flash 50%/RAM 3.5%。
 - 未確認: フラッシュ長期摩耗(設計~1000万回)、外付けNTC温度保護(既定OFF)、PlatformIO ビルド。
-- ハードウェア詳細(BOM/回路/J1): HARDWARE.md。
+- ハードウェア詳細(BOM/回路/J1): [HARDWARE_JP.md](HARDWARE_JP.md)。

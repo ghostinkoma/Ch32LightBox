@@ -1,5 +1,7 @@
 # WCH-LinkE Driver Setup Guide (Zadig)
 
+**English** · [日本語](ZADIG_JP.md) · [← Studio README](README.md)
+
 minichlink, which writes to the CH32V003, requires the **WinUSB driver** to be assigned to the WCH-LinkE.
 On a new PC, you only need to perform this setup once at the beginning (the same guide appears from **[🔌 Driver (Zadig)]** in the menu).
 

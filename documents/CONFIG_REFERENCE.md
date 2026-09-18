@@ -1,5 +1,7 @@
 # LightBox Configuration Reference Guide (config.h)
 
+**English** · [日本語](CONFIG_REFERENCE_JP.md) · [← README](../README.md)
+
 Full reference for all parameters in `source/config.h`. Rebuild after changing any values (refer to [README](../README.md)).
 Pins are named using ch32fun pin nomenclature (`PA1`, `PC2`, `PD0`, etc.).
 

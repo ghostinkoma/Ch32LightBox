@@ -1,5 +1,7 @@
 # LightBox Studio — CH32V003 One-Stop GUI (No VS Code Required)
 
+**English** · [日本語](README_JP.md) · [← Project README](../../README.md)
+
 A Java toolset for executing the workflow of `config.h` editing → compilation → flashing **from a single menu GUI**.
 Its goal is to enable complete development of LightBox ([../../README.md](../../README.md)) using only a GUI, without requiring VS Code.
 
@@ -52,7 +54,7 @@ build.bat
 # Linux/macOS
 ./build.sh
 ```
-Four JAR files will be generated in `dist/` (pre-generated JARs are also bundled in this repository).
+Five JAR files will be generated in `dist/` (pre-generated JARs are also bundled in this repository).
 
 ## Usage
 

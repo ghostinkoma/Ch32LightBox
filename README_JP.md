@@ -1,5 +1,7 @@
 # LightBox — CH32V003 LED 調光コントローラ
 
+[English](README.md) · **日本語**
+
 > **ステータス: ✅ 実機検証済み・稼働中（2026-09 時点、問題なし）** — 実基板(KiCad)／ユニバーサル基板の
 > 両方で全機能を確認。常夜灯・明るさ調整・ソフトスタート/オフ・12h耐久・≒1A LEDで発熱ほぼ無し。
 > **Fusion 360 で設計・3Dプリントした筐体に組み込み、実運用中。**
@@ -30,8 +32,8 @@
 | **ソフトスタート** | 電源ON/OFF時に設定輝度まで CIE基準で滑らかにフェードイン/アウト（時間を config 指定、0で無効、最大65535ms） |
 | **押しSW** | 短押しで ON/OFF トグル（時間ベースデバウンス。フェード中の再操作も滑らかに追従） |
 
-全設定は **`source/config.h`** に集約（詳細は [CONFIG_REFERENCE.md](documents/CONFIG_REFERENCE.md)）。
-仕様の詳細は [SPEC.md](documents/SPEC.md)、設計判断は [DESIGN.md](documents/DESIGN.md)。
+全設定は **`source/config.h`** に集約（詳細は [CONFIG_REFERENCE_JP.md](documents/CONFIG_REFERENCE_JP.md)）。
+仕様の詳細は [SPEC_JP.md](documents/SPEC_JP.md)、設計判断は [DESIGN_JP.md](documents/DESIGN_JP.md)。
 
 ## ピン割当（**SOP8 (J4M6) で全機能が載る**）
 
@@ -88,8 +90,15 @@ make            CH32FUN=/path/to/ch32fun/ch32fun      # ビルド→書込
 
 ### ② PlatformIO
 
-[PLATFORMIO.md](PLATFORMIO.md) 参照（`platformio.ini` 同梱）。
+[PLATFORMIO_JP.md](PLATFORMIO_JP.md) 参照（`platformio.ini` 同梱）。
 ※PlatformIO ビルドはこの環境では未検証。検証済みは上記 Makefile。
+
+### ③ LightBox Studio（GUI・VS Code 不要）
+
+`config.h` 編集 → コンパイル → 書込 を **1本のメニュー GUI から** 完結させたい場合は、
+[tools/LightBoxStudio/](tools/LightBoxStudio/README_JP.md) の Java ツール群を使う。初回起動で
+自己完結ツールチェーンを自動DLするため、コマンドラインも VS Code も不要。
+詳細は [LightBox Studio README](tools/LightBoxStudio/README_JP.md)。
 
 ## ディレクトリ
 
@@ -105,21 +114,23 @@ LightBox/
 │   ├─ nightlight.h    WS2812/SK6812 常夜灯
 │   ├─ funconfig.h     ch32fun 設定
 │   └─ Makefile
-├─ documents/     SPEC.md / CONFIG_REFERENCE.md / HARDWARE.md / DESIGN.md
-├─ PCB/           KiCad 基板一式 (LightBox/ = 回路図/PCB, AertWork.png, FDS5680 lib)
+├─ documents/     SPEC.md / CONFIG_REFERENCE.md / HARDWARE.md / DESIGN.md (+ *_JP.md)
+├─ tools/         LightBoxStudio/ = GUIツール群 (config編集→ビルド→書込, VS Code不要)
+├─ ldscript/      PlatformIO 用リンカスクリプト (lightbox_ch32v003.ld)
+├─ PCB/           KiCad 基板一式 (LightBox/ = 回路図/PCB; AertWork.png; KiCad/ = FDS5680 lib)
 ├─ platformio.ini / PLATFORMIO.md
-├─ 3D/            筐体 (Fusion 360 設計 / STL, 3Dプリント済)
+├─ 3D_Models/     筐体 (Fusion 360 設計 / STL, 3Dプリント済)
 └─ LICENSE        非商用ライセンス (CC BY-NC 4.0 準拠)
 ```
 
 ## 筐体
 
-**Fusion 360 で設計 → 3Dプリント済み**。本基板を組み込み、**実運用中**（`3D/` に STL）。
+**Fusion 360 で設計 → 3Dプリント済み**。本基板を組み込み、**実運用中**（`3D_Models/` に STL）。
 
 ## ハードウェア（基板）
 
 基板設計・回路図・アートワーク（ピンヘッダ付き）完了 → `PCB/LightBox/`（KiCad）。
-**配線はファームと完全一致**。詳細・BOM・J1ピンアウトは [HARDWARE.md](documents/HARDWARE.md)。
+**配線はファームと完全一致**。詳細・BOM・J1ピンアウトは [HARDWARE_JP.md](documents/HARDWARE_JP.md)。
 
 - U1 CH32V003(SOP8) / Q1 FDS5680(N-MOSFET, メインLED低側駆動) / D1 SK6812(OST45050C1A-W 常夜灯)
 - R1 100Ω(ゲート直列) / R2 10K(ゲートプルダウン=リセット時LED OFF) / **D2 パイロットLED + R3 100Ω(直列)**

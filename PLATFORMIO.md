@@ -1,5 +1,7 @@
 # Building LightBox with PlatformIO
 
+**English** · [日本語](PLATFORMIO_JP.md) · [← README](README.md)
+
 > **Status**: This configuration is **untested** in this environment (PlatformIO is not installed).
 > **The verified standard build is `source/Makefile` ([README](README.md) ①)**.
 > PlatformIO support is provided purely as a convenient scaffold.

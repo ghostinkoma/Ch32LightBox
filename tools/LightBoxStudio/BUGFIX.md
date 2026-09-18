@@ -1,10 +1,12 @@
 # LightBox Studio — Bug Fix & Troubleshooting Record (BUGFIX)
 
+**English** · [日本語](BUGFIX_JP.md) · [← Studio README](README.md)
+
 > **Summary: ✅ Verified on real hardware (2026-09-18).** `config.h editing → compilation → CH32V003 flashing` was 
 > successfully executed on actual hardware using **only minichlink bundled with the downloaded ch32fun (`dist/toolchain/.../minichlink.exe`, self-contained)** 
 > (`Detected CH32V003 → Writing image → Image written.`). Features such as a sandbox that does not scan the local PC and permanent recording of proven working builds (resilient against clean reinstalls) have been fully implemented and verified.
 
-Target: `tools/LightBoxStudio/`. Branch: `claude/lightbox-studio-tools`.
+Target: `tools/LightBoxStudio/` (integrated into `main`).
 
 ---
 

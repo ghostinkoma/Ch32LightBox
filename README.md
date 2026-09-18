@@ -1,5 +1,7 @@
 # LightBox — CH32V003 LED Dimmer Controller
 
+**English** · [日本語](README_JP.md)
+
 > **Status: ✅ Hardware Verified & Operational (as of 2026-09, no issues)** — All functions confirmed on both custom PCB (KiCad) and universal breadboard/perfboard. Verified nightlight, brightness control, soft start/off, 12-hour endurance test, and virtually zero heat generation with a ~1A LED.
 > **Enclosed and currently in actual use inside a 3D-printed case designed in Fusion 360.**
 >
@@ -81,6 +83,10 @@ Stripped footprint: Core only ~3 KB, + Nightlight ~3.6 KB. `DEBUG_LOG=1` adds ~1
 See [PLATFORMIO.md](PLATFORMIO.md) (`platformio.ini` included).
 *Note: The PlatformIO build has not been verified in this environment. The verified build method is the Makefile above.*
 
+### ③ LightBox Studio (GUI — no VS Code required)
+
+For a GUI-only workflow (`config.h` editing → compile → flash from a single menu), use the Java toolset in [tools/LightBoxStudio/](tools/LightBoxStudio/README.md). It downloads a self-contained toolchain on first run, so no command line or VS Code is required. See the [LightBox Studio README](tools/LightBoxStudio/README.md) for details.
+
 ## Directory Structure
 
 ```
@@ -95,16 +101,18 @@ LightBox/
 │  ├─ nightlight.h    WS2812/SK6812 nightlight driver
 │  ├─ funconfig.h     ch32fun environment configuration
 │  └─ Makefile
-├─ documents/      SPEC.md / CONFIG_REFERENCE.md / HARDWARE.md / DESIGN.md
-├─ PCB/            KiCad board files (LightBox/ = Schematic/PCB, ArtWork.png, FDS5680 lib)
+├─ documents/      SPEC.md / CONFIG_REFERENCE.md / HARDWARE.md / DESIGN.md (+ *_JP.md)
+├─ tools/          LightBoxStudio/ = GUI toolset (config edit → build → flash, no VS Code)
+├─ ldscript/       Linker script for PlatformIO (lightbox_ch32v003.ld)
+├─ PCB/            KiCad board files (LightBox/ = Schematic/PCB; AertWork.png; KiCad/ = FDS5680 lib)
 ├─ platformio.ini / PLATFORMIO.md
-├─ 3D/             Enclosure (Fusion 360 design / STL files, 3D printed)
+├─ 3D_Models/      Enclosure (Fusion 360 design / STL files, 3D printed)
 └─ LICENSE         Non-commercial license (CC BY-NC 4.0 compliant)
 ```
 
 ## Enclosure
 
-**Designed in Fusion 360 → 3D printed**. The board is assembled inside and **currently in operational use** (STL files available in `3D/`).
+**Designed in Fusion 360 → 3D printed**. The board is assembled inside and **currently in operational use** (STL files available in `3D_Models/`).
 
 ## Hardware (PCB)
 

@@ -1,8 +1,10 @@
 # LightBox ハードウェア (基板 / 回路 / BOM)
 
+[English](HARDWARE.md) · **日本語** · [← README](../README_JP.md)
+
 CH32V003 LED 調光コントローラの実基板。KiCad プロジェクト一式:
-`D:\hobby\LightBox\PCB\LightBox\`（回路図 `LightBox.kicad_sch` / 基板 `LightBox.kicad_pcb`）。
-アートワーク画像: `D:\hobby\LightBox\PCB\AertWork.png`。MOSFETシンボル: `PCB\KiCad\FDS5680.*`。
+`PCB/LightBox/`（回路図 `LightBox.kicad_sch` / 基板 `LightBox.kicad_pcb`）。
+アートワーク画像: `PCB/AertWork.png`。MOSFETシンボル: `PCB/KiCad/FDS5680.*`。
 
 > 基板設計・スキーマ設計・アートワーク（ピンヘッダ付き）完了。**ファーム(現行)と配線完全一致を確認済み**。
 
@@ -79,7 +81,7 @@ Q1 ソース ── GND
   ON-OFF ソフトスタート・ソフトオフ / **消灯・点灯 各約12時間 異常なし**
   （過熱誤遮断は温度保護オフで解消、長時間安定）。
 - **★ユニバーサル基板(1.27mmピッチ)でフリーハンド同等回路を製作 → 動作確認済**。
-- **★Fusion 360 で設計・3Dプリントした筐体に組み込み、実運用中**（STL は `3D/`）。
+- **★Fusion 360 で設計・3Dプリントした筐体に組み込み、実運用中**（STL は `3D_Models/`）。
 - **発熱**: 念のためヒートシンクを追加しているが、**≒1A のLED接続でほとんど発熱は見られない**。
   → デューティ由来の「ダイ温度推定」が誤遮断していたのは実発熱ではなく推定値の問題だったことを裏付け、
   温度保護OFF(不採用)の判断は妥当。実発熱で保護が要るなら外付けNTC実測へ。

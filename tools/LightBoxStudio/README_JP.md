@@ -1,13 +1,15 @@
 # LightBox Studio — CH32V003 ワンストップGUI（VS Code不要）
 
+[English](README.md) · **日本語** · [← プロジェクト README](../../README_JP.md)
+
 `config.h` 編集 → コンパイル → 書込 を **1本のメニューGUIから** 実行するための Java ツール群。
-LightBox（[../../README.md](../../README.md)）の開発に VS Code を使わず、GUI だけで完結させることを目的とする。
+LightBox（[../../README_JP.md](../../README_JP.md)）の開発に VS Code を使わず、GUI だけで完結させることを目的とする。
 
 > **状態: ✅ 実機確認済み（2026-09-18）**。初回セットアップでツールチェーンを自動DLして
 > `toolchain/` に配備し設定まで自動記入（自己完結・PC非走査のサンドボックス）。
 > **config.h編集 → コンパイル → CH32V003書込** を、**ダウンロードした ch32fun 同梱の
 > minichlink（dist内・self-contained）だけ**で実機書込成功（`Detected CH32V003 → Image written`）。
-> ユーザーはインストール済みパスを探す必要がない。詳細な不具合対処の記録は [BUGFIX.md](BUGFIX.md)。
+> ユーザーはインストール済みパスを探す必要がない。詳細な不具合対処の記録は [BUGFIX_JP.md](BUGFIX_JP.md)。
 
 ## 構成（5本立て）
 
@@ -29,7 +31,7 @@ LightBox（[../../README.md](../../README.md)）の開発に VS Code を使わ�
   **［⬇ 初回セットアップ］が自動で用意**するので、事前インストールは不要。
 - 書込機能のみ、**WCH-LinkE の WinUSBドライバ**（初回のみ Zadig）が必要。
   ※これは Java から自動化できない唯一の手動ステップ（別PC配布時のみ）。
-  メニューの **［🔌 ドライバ(Zadig)］** に手順を内蔵（[ZADIG.md](ZADIG.md) 参照）。
+  メニューの **［🔌 ドライバ(Zadig)］** に手順を内蔵（[ZADIG_JP.md](ZADIG_JP.md) 参照）。
 
 > `config.h` 編集だけなら**セットアップも不要**（純Javaで完結）。
 
@@ -57,7 +59,7 @@ build.bat
 # Linux/macOS
 ./build.sh
 ```
-`dist/` に4本のJARが生成される（本リポジトリには生成済みJARも同梱）。
+`dist/` に5本のJARが生成される（本リポジトリには生成済みJARも同梱）。
 
 ## 使い方
 
@@ -93,7 +95,7 @@ build.bat
 ## config.h エディタの特長
 
 - **スキーマ駆動**：全57項目を型別ウィジェット（数値/チェック/ドロップダウン/ピン/色）で編集。
-  定義は [`documents/CONFIG_REFERENCE.md`](../../documents/CONFIG_REFERENCE.md) と `source/config.h` に対応。
+  定義は [`documents/CONFIG_REFERENCE_JP.md`](../../documents/CONFIG_REFERENCE_JP.md) と `source/config.h` に対応。
 - **非破壊編集**：`#define KEY VALUE` の**値トークンだけ**を差し替え、コメント・enum定義行・
   空行・`u`/`L`サフィックス・`(-300)` 様式を保全（全文再生成しない）。保存前に `config.h.bak` を作成。
 - **相互制約バリデーション**（保存前チェック）：
