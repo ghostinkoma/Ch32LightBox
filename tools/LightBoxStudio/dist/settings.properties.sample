@@ -1,0 +1,22 @@
+# LightBox Studio 設定サンプル
+# dist/ にコピーして settings.properties にリネームし、環境に合わせて編集してください。
+# （メニューの［⚙ 設定］からも編集・保存できます）
+# 空欄は「PATH 上のコマンドを使う」または「自動検出」を意味します。
+
+# config.h / Makefile がある source/ フォルダ（空=自動検出）
+project.dir=
+
+# ch32fun.mk があるフォルダ（例 D:/ch32/ch32fun/ch32fun）
+ch32fun.dir=
+
+# make 実行ファイル（空=PATH 上の make）
+make.path=
+
+# riscv-none-elf-gcc のある bin フォルダ（空=PATH）。xpack riscv-none-elf 推奨（RV32EC libgcc必須）
+gcc.bin.dir=
+
+# minichlink 実行ファイル（空=PATH 上の minichlink）
+minichlink.path=
+
+# 書込対象（既定 lightbox.bin。相対なら project.dir 基準）
+flash.artifact=lightbox.bin

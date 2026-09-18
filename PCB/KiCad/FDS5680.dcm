@@ -1,0 +1,9 @@
+EESchema-DOCLIB  Version 2.0
+#
+$CMP FDS5680
+D Obsolete - 60V N-Channel PowerTrench MOSFET 7A, 28m
+K
+F https://www.onsemi.com/download/data-sheet/pdf/FDS5680-D.pdf
+$ENDCMP
+#
+#End Doc Library

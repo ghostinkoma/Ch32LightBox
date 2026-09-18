@@ -1,0 +1,61 @@
+LightBox — CH32V003 LED Dimmer (firmware / hardware / enclosure)
+Copyright (c) 2026 ghostinkoma
+
+================================================================
+非商用ライセンス (Non-Commercial License)  —  日本語
+================================================================
+
+本プロジェクト "LightBox"（ファームウェア、回路図・基板データ、3D筐体データ、
+ドキュメントを含む、作者 ghostinkoma のオリジナル成果物）は、次の条件で利用を許諾します。
+
+1. 【非商用限定】商用利用は不可。個人・非営利・教育・研究目的でのみ使用・複製・
+   改変・再配布できます。
+
+2. 【クレジット表示（帰属）必須】利用・改変・再配布の際は、原作者
+   「ghostinkoma」のクレジットと本プロジェクト名 "LightBox" を明記すること。
+
+3. 【改変自由（非商用に限る）】上記1・2を満たす限り、自由に改変・派生物の作成・
+   再配布ができます。派生物にも本ライセンス（同等の非商用・帰属条件）を引き継ぐこと。
+
+4. 【無保証・免責】本成果物は「現状のまま(AS IS)」提供され、いかなる保証もありません。
+   本成果物の使用・改変・配布によって生じたいかなる損害についても、作者 ghostinkoma は
+   一切の責任を負いません。利用者の自己責任で使用してください。
+
+本ライセンスは実質的に Creative Commons 表示-非営利 4.0 国際 (CC BY-NC 4.0) に準拠します。
+正式条文: https://creativecommons.org/licenses/by-nc/4.0/legalcode.ja
+（商用利用を希望する場合は、作者 ghostinkoma に個別許諾を求めてください。）
+
+================================================================
+Non-Commercial License  —  English (summary)
+================================================================
+
+"LightBox" (original works by ghostinkoma: firmware, schematic/PCB, 3D enclosure,
+and documentation) is licensed under the following terms:
+
+  * NonCommercial only. Use, copy, modify and redistribute for personal,
+    non-profit, educational or research purposes only. No commercial use.
+  * Attribution required. You must credit the original author "ghostinkoma"
+    and the project name "LightBox".
+  * Modification allowed (non-commercial). You may freely modify and create
+    derivatives, provided (1) and (2) are met and derivatives carry the same
+    non-commercial + attribution terms.
+  * No warranty / No liability. Provided "AS IS", without warranty of any kind.
+    The author ghostinkoma shall not be liable for any damages arising from the
+    use, modification or distribution of these works. Use at your own risk.
+
+This corresponds to Creative Commons Attribution-NonCommercial 4.0 International
+(CC BY-NC 4.0): https://creativecommons.org/licenses/by-nc/4.0/
+For commercial use, contact the author (ghostinkoma) for separate permission.
+
+================================================================
+第三者コンポーネント / Third-party components
+================================================================
+
+本プロジェクトが依存・同梱する第三者コードは、それぞれの原ライセンスに従います
+（上記の非商用ライセンスは ghostinkoma のオリジナル部分にのみ適用）:
+
+  * ch32fun (cnlohr ほか) … MIT-x11 / NewBSD
+    - ch32fun.h / ch32fun.c / ws2812b_simple.h / minichlink 等
+  * その他リンク先の各ライブラリ … 各配布元のライセンス
+
+これらは各原ライセンスの条件で利用してください。
