@@ -100,6 +100,16 @@ static uint16_t g_fadeFrom = 0, g_fadeTo = 0;
 static uint32_t g_fadeStart = 0;
 static uint16_t g_fadeDurMs = 0;          /* 0 = フェードなし(停止) */
 
+#if PWM_ON_TIME_S > 0
+/* 自動消灯タイマ: 点灯からの経過を1秒刻みで数える(SysTick ラップ非依存)。
+ * 操作のたびに arm() でリセット(=延長)。PWM_ON_TIME_S 秒到達で g_on=0 → ソフトオフ。 */
+static uint32_t g_onSecTick = 0;          /* 1秒刻みの基準 tick */
+static uint32_t g_onSeconds = 0;          /* 点灯開始/最終操作からの経過秒 */
+static inline void autooff_arm(void) { g_onSeconds = 0; g_onSecTick = SysTick->CNT; }
+#else
+static inline void autooff_arm(void) {}   /* 無効時は何もしない */
+#endif
+
 /* 目標 L*: ON なら現在レベルの L*, OFF なら 0 */
 static inline uint16_t target_lx(void)
 {
@@ -379,6 +389,7 @@ int main(void)
 
     /* 起動(電源投入): 復元輝度へソフトスタート・フェードイン */
     output_begin_fade(SOFT_START_ON);
+    if (g_on) autooff_arm();               /* 点灯状態で起動したら自動消灯カウント開始 */
 
     DBG("LightBox CH32V003: CIE-L* dimmer  level=%u/%u top=%u rev=%u half=%u lock=%ums snap=%u/%ums\n",
         g_level, LEVELS, (unsigned)PWM_TOP,
@@ -458,6 +469,7 @@ int main(void)
                 if (g_level > 0) g_on = 1;
 #endif
                 output_retarget();
+                if (g_on) autooff_arm();           /* 操作があったら自動消灯カウントをリセット(延長) */
 #if STORE_ENABLE
                 dirty = 1; dirtyTick = now;        /* 変更 → 5秒後にコミット予約 */
 #endif
@@ -475,6 +487,7 @@ int main(void)
             if (swStable == 0) {                        /* 確定した押下(立下り)でトグル */
                 g_on = !g_on;
                 output_begin_fade(g_on ? SOFT_START_ON : SOFT_START_OFF);  /* ソフトスタート */
+                if (g_on) autooff_arm();                /* ONトグルで自動消灯カウント開始 */
                 DBG("output %s\n", g_on ? "ON" : "OFF");
 #if STORE_ENABLE
                 dirty = 1; dirtyTick = SysTick->CNT;    /* ON/OFF も保存対象 → コミット予約 */
@@ -490,6 +503,24 @@ int main(void)
                 uint16_t st = STORE_PACK(g_on, g_level);
                 if (st != savedState) { store_save(st); savedState = st; }
                 dirty = 0;
+            }
+        }
+#endif
+
+#if PWM_ON_TIME_S > 0
+        /* --- 自動消灯タイマ: 点灯からの経過秒が PWM_ON_TIME_S に達したらソフトオフ ---
+         * 1秒刻みで数えるので SysTick(32bit@48MHz, ~89秒周期)のラップに依存しない。 */
+        if (g_on) {
+            if ((uint32_t)(SysTick->CNT - g_onSecTick) >= Ticks_from_Ms(1000u)) {
+                g_onSecTick += Ticks_from_Ms(1000u);        /* 1秒進める(ドリフト無し) */
+                if (++g_onSeconds >= (uint32_t)PWM_ON_TIME_S) {
+                    g_on = 0;
+                    output_begin_fade(SOFT_START_OFF);      /* 自動消灯(ソフトオフ) */
+                    DBG("AUTO-OFF after %us\n", (unsigned)PWM_ON_TIME_S);
+#if STORE_ENABLE
+                    dirty = 1; dirtyTick = SysTick->CNT;    /* OFF状態を保存予約 */
+#endif
+                }
             }
         }
 #endif

@@ -93,6 +93,8 @@ public final class ConfigSchema {
         // ---- 動作オプション ----
         S = "動作オプション";
         f.add(bool("WAKE_ON_TURN", S, "回して自動点灯").build());
+        f.add(ConfigField.of("PWM_ON_TIME_S", ConfigField.Type.INT).section(S).label("自動消灯タイマ")
+                .range(0, 86400).unit("s").help("点灯からこの秒数で自動消灯(ソフトオフ)。0=無効。操作で延長。バッテリ寿命に有効").build());
         f.add(bool("DEBUG_LOG", S, "SWD printfログ").help("★通常運用は0厳守(ブロッキングで取りこぼし要因)").build());
 
         // ---- ソフトスタート ----

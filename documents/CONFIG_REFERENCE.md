@@ -59,6 +59,7 @@ time** (`_Static_assert`). SOP8 (J4M6) pins: `PA1 PA2 PC1 PC2 PC4 PD1(SWIO)`.
 | Item | Default | Description |
 |------|---------|-------------|
 | `WAKE_ON_TURN` | `1` | Turning the encoder while off automatically turns the light on (only if resulting level > 0; turning towards dark keeps level at 0 and stays off). Set to `0` to require button push to turn on |
+| `PWM_ON_TIME_S` | `0` | **Auto-off timer (seconds)**: turns the main output off (soft fade) this many seconds after it was switched on. `0` = disabled (stays on). Any encoder/switch activity resets (extends) the countdown. Lowers average on-time → saves battery, and adds an auto-off convenience on continuous power |
 | `SOFT_START_ON` | `800` | Turn-on fade-in time (ms). `0` = Instantaneous, Max = 65535 ($\approx 65.5\text{s}$). Perceptually linear based on CIE |
 | `SOFT_START_OFF` | `600` | Turn-off fade-out time (ms). `0` = Instantaneous, Max = 65535 |
 | `DEBUG_LOG` | `0` | Set to `1` to enable SWD printf (development only). **Must be set to `0` for normal operation** (blocking printf can cause missed events) |
@@ -164,3 +165,23 @@ Rules enforced at compile time (and mirrored in the GUI config editor):
 - Assigning **`PD1`** to a feature emits a `#warning` (it collides with SWIO flashing/`debugprintf`).
 
 *Note:* Software-only features (die-estimated temperature, thermal cutoff/throttling, watchdog, EMI spread spectrum) **need no GPIO pin**. To run more pin-bound features simultaneously than SOP8 allows, switch to a larger package such as TSSOP20 / QFN (CH32V003F4P6) — that package's pin set is out of scope for this table.
+
+## Battery Operation (supplementary — design estimates)
+
+LightBox is primarily designed for **continuous power**; battery use is feasible for a low-duty
+nightlight. The figures below are **design estimates** (confirm on hardware):
+
+- **Nightlight LED**: a green LED via a **~1 kΩ** series resistor at 3 V ≈ **0.9 mA** (clearly
+  visible for a nightlight). A ~2 mA option (510 Ω) is brighter but roughly **halves** battery life;
+  1 kΩ is a good brightness/life balance.
+- **Duty**: e.g. 100 ms on every 5 s.
+- **`PWM_ON_TIME_S` (shipped)**: the auto-off timer lowers average on-time and thus battery drain,
+  independent of any sleep mode — the concrete lever available today.
+- **Deep low-power (roadmap, not yet implemented)**: with a Standby + AWU periodic-wake design
+  (encoder on EXTI, encoder pull-ups switched to analog-input during sleep so they stop leaking),
+  a single **CR2032 (~220 mAh)** is estimated at **~6.5 months** for the 1 kΩ / 100 ms-per-5 s case.
+  **Without** that sleep mode (MCU kept at 48 MHz) battery life is far shorter.
+- **Cell choice**: 2×CR2032 in *series* raises voltage (6 V) but **not capacity**, and 6 V exceeds
+  the CH32V003 5.5 V maximum (needs regulation). For longer life prefer *parallel* cells (~440 mAh)
+  or a larger cell (CR2450 ~600 mAh ≈ ~2 years est.). Add a 10–100 µF buffer cap to handle CR2032
+  pulse load / internal resistance.
