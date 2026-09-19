@@ -17,7 +17,8 @@ Functional specification for the CH32V003 LED Dimmer Controller. Architectural r
 - Uses integer arithmetic only (cubic terms computed using `uint64_t`), without `libm` or floating-point libraries. Shared between the main output and night light (`cie.h`).
 
 ## 3. PWM Output
-- `TIM2_CH2` (remap 1) = `PC2`, 16-bit counter. Default `PWM_TOP = 4095` ($\approx 12\text{kHz}$). Maximum limit: 65,355.
+- `TIM2_CH2` (remap 1) = `PC2`, 16-bit counter. Default `PWM_TOP = 4095` ($\approx 12\text{kHz}$). Maximum limit: 65,535.
+- **Output pin selectable via `PWM_PIN`** (default `PC2`=TIM2_CH2; also `PC1`=TIM2_CH4 / `PA1`=TIM1_CH2 / `PC4`=TIM1_CH4). `source/pins.h` derives the timer/channel/remap and validates it at compile time. Only `PC2` is hardware-verified; other pins are compile-supported.
 
 ## 4. Encoder & Debouncing
 - **Full-step State Machine (Ben Buxton)**: Emits $\pm 1$ only upon completing a valid state transition path $\rightarrow$ suppresses single-phase bounce artifacts.
@@ -66,7 +67,7 @@ Selectable temperature source via `TEMP_SOURCE`:
 - Zero external component requirement. Output values are indicative reference approximations.
 
 ### 6.2 External Analog Sensor (Physical Sensing)
-- Thermally couples an NTC thermistor to the switching MOSFET and samples via ADC (`TEMP_SENSE_ANALOG`). Calibrated via linear approximation coefficients `TEMP_CAL_*`.
+- Thermally couples an NTC thermistor to the switching MOSFET and samples via ADC (`TEMP_SENSE_PIN`; the ADC channel is derived automatically). Calibrated via linear approximation coefficients `TEMP_CAL_*`.
 
 ### 6.3 Protection Logic (Both Sources)
 - Exceeding `WARN_TEMP_C` ($80^\circ\text{C}$) $\rightarrow$ **Forces main output PWM (MOSFET) to 0** to mitigate thermal hazards.
@@ -99,7 +100,7 @@ Selectable temperature source via `TEMP_SOURCE`:
 - Time tracking evaluates on millisecond scale prior to scaling to prevent integer overflow in `Ticks_from_Ms(period) = period \times 48000` ($period \gtrsim 89.5\text{s}$). Cycle/interval configurations constrained to $\le 60,000\text{ms}$ to maintain safety margin against 32-bit SysTick roll-over ($\approx 89.5\text{s}$).
 - Configurable maximum color `WS_MAX_COLOR` (RGB format `0xRRGGBB` / RGBW format `0xRRGGBBWW`).
 - Selectable color channel ordering via `WS_ORDER` (GRB, RGB, GRBW, RGBW).
-- Supports SK6812 RGBW LED protocol. Configured on `WS_PORT` / `WS_PINNUM` for `WS_COUNT` elements.
+- Supports SK6812 RGBW LED protocol. Configured on `WS_DIN_PIN` (GPIO port/number derived automatically) for `WS_COUNT` elements.
 - Frame updates emitted at `NIGHTLIGHT_REFRESH_MS` intervals via `ws2812b_simple.h` (requires `SysTick = HCLK`).
 
 ## 8. Boot Sequence

@@ -19,6 +19,7 @@ CH32V003 LED 調光コントローラの機能仕様。設計判断の根拠は 
 
 ## 3. PWM 出力
 - TIM2_CH2(remap1)=PC2、16bit カウンタ。既定 `PWM_TOP=4095`（≈12kHz）。最大 65535。
+- **出力ピンは `PWM_PIN` で選択可**（既定 `PC2`=TIM2_CH2。他に `PC1`=TIM2_CH4 / `PA1`=TIM1_CH2 / `PC4`=TIM1_CH4）。`source/pins.h` がタイマ/チャネル/remap を導出しコンパイル時に検証。実機検証済は `PC2` のみ、他はコンパイル対応。
 
 ## 4. エンコーダ / チャタリング吸収
 - フルステップ状態機械(Ben Buxton)。正しい遷移経路を完走時のみ ±1 発火 → 単相バウンス構造吸収。
@@ -77,7 +78,7 @@ CH32V003 LED 調光コントローラの機能仕様。設計判断の根拠は 
 - 外付け部品ゼロ。値は目安（`DIE_RISE_AT_FULL_C` を実機の発熱に合わせ調整）。
 
 ### 6.2 外付けアナログセンサ（実測・要ピン）
-- NTC 等を制御MOSFETに熱結合し ADC(`TEMP_SENSE_ANALOG`)で実測。近似1次校正 `TEMP_CAL_*`（要校正）。
+- NTC 等を制御MOSFETに熱結合し ADC(`TEMP_SENSE_PIN`。ADCチャネルは自動導出)で実測。近似1次校正 `TEMP_CAL_*`（要校正）。
 
 ### 6.3 保護動作（両ソース共通）
 - `WARN_TEMP_C`(80℃)超 → **本体PWM(MOSFET)を強制的に0**（火災リスク回避）。
@@ -118,7 +119,7 @@ CH32V003 LED 調光コントローラの機能仕様。設計判断の根拠は 
   32bit ラップ~89.5s の安全マージン)。
 - 最大色 `WS_MAX_COLOR`（RGB=0xRRGGBB / RGBW=0xRRGGBBWW）。各chを CIE で明滅。
 - チップのバイト並び `WS_ORDER` を GRB/RGB/GRBW/RGBW から選択（製品差を吸収）。
-- SK6812 RGBW 対応。データ線 `WS_PORT`/`WS_PINNUM`、`WS_COUNT` 個。
+- SK6812 RGBW 対応。データ線 `WS_DIN_PIN`（port/番号は自動導出）、`WS_COUNT` 個。
 - 送信は `NIGHTLIGHT_REFRESH_MS` 間隔。ws2812b_simple.h(ch32fun) 使用（SysTick=HCLK 要件）。
 
 ## 8. 起動シーケンス

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # LightBox Studio ビルド (Linux/macOS)
 #   依存: JDK 11+ (javac / jar)
-#   生成物: dist/ 以下に 4本の JAR + settings.properties.sample
+#   生成物: dist/ 以下に 5本の JAR + settings.properties.sample
 set -euo pipefail
 cd "$(dirname "$0")"
 

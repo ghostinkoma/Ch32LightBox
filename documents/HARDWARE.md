@@ -40,7 +40,7 @@ Artwork image: `PCB/AertWork.png`. MOSFET symbol: `PCB/KiCad/FDS5680.*`.
 | 4 VDD | VDD | Power / J1-9 | — | 
 | 5 PC1 | ENC B | SW2-B / J1-6 | `ENC_B_PIN=PC1` | 
 | 6 PC2 | PWM $\rightarrow$ R1 $\rightarrow$ Q1 Gate | R1 / U1-6 | PWM=`PC2` (Fixed) | 
-| 7 PC4 | LED2810 (SK6812 DIN) | D1-2 / J1-2 | `WS_PORT=GPIOC, WS_PINNUM=4` | 
+| 7 PC4 | LED2810 (SK6812 DIN) | D1-2 / J1-2 | `WS_DIN_PIN=PC4` | 
 | 8 PD1 | SW IO (SWIO Flash/debug) | J1-3 | Preserved | 
 
 $\rightarrow$ **PCB pinout matches the flashed firmware identically** (all features verified on real hardware).

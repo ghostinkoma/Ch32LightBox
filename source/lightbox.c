@@ -26,6 +26,7 @@
  */
 #include "ch32fun.h"
 #include "config.h"
+#include "pins.h"      /* 機能↔ピンの導出・能力/衝突のコンパイル時検証 */
 #include "cie.h"
 #if STORE_ENABLE
 #include "store.h"
@@ -83,11 +84,12 @@ static uint8_t  g_deratePct = 0;        /* サーマルスロットルの累積�
   #define PWM_GPIO_SPEED  GPIO_Speed_10MHz
 #endif
 
-/* g_curDuty(PWM_TOP基準) を現在の周期(ATRLR)にスケールして CH2CVR に書く */
+/* g_curDuty(PWM_TOP基準) を現在の周期(ATRLR)にスケールして選択チャネルの CVR に書く。
+ * タイマ/チャネルは PWM_PIN から pins.h が導出 (既定 PC2=TIM2_CH2)。 */
 static inline void pwm_write(void)
 {
-    uint32_t arr = TIM2->ATRLR;               /* スペクトラム拡散で PWM_TOP から変動しうる */
-    TIM2->CH2CVR = (uint32_t)g_curDuty * (arr + 1u) / (PWM_TOP + 1u);
+    uint32_t arr = PWM_TIMREG->ATRLR;         /* スペクトラム拡散で PWM_TOP から変動しうる */
+    PWM_CVR = (uint32_t)g_curDuty * (arr + 1u) / (PWM_TOP + 1u);
 }
 
 /* ---- 表示輝度 (L*空間) とソフトスタート(フェード)状態 ----
@@ -160,33 +162,48 @@ static void fade_tick(void)
     if (nl != g_dispLx) { g_dispLx = nl; output_refresh(); }
 }
 
-/* TIM2_CH2 を PC2 に 16bit PWM で設定 (config: PWM_TOP/PWM_PSC) */
-static void tim2_pwm_init(void)
+/* PWM_PIN を 16bit PWM 出力に設定 (config: PWM_TOP/PWM_PSC)。
+ * タイマ/チャネル/remap/GPIO は PWM_PIN から pins.h が導出。
+ * 既定(PWM_PIN=PC2=TIM2_CH2 remap1)は従来と同一のレジスタ操作を生成する(挙動不変)。
+ * ★PC2 以外(TIM1/別チャネル)はコンパイル対応・実機未検証。 */
+static void pwm_init(void)
 {
-    RCC->APB2PCENR |= RCC_APB2Periph_GPIOC | RCC_APB2Periph_AFIO;
+    RCC->APB2PCENR |= PWM_RCC_GPIO_BIT | RCC_APB2Periph_AFIO;
+#if PWM_USES_TIM1
+    RCC->APB2PCENR |= RCC_APB2Periph_TIM1;
+#else
     RCC->APB1PCENR |= RCC_APB1Periph_TIM2;
+#endif
 
-    /* TIM2 remap1: CH2 = PC2 */
-    AFIO->PCFR1 &= ~AFIO_PCFR1_TIM2_REMAP;
-    AFIO->PCFR1 |=  AFIO_PCFR1_TIM2_REMAP_PARTIALREMAP1;
+    /* PWM_PIN が出るように remap を設定 (対象タイマの remap ビットのみ更新) */
+    AFIO->PCFR1 &= ~PWM_REMAP_CLEAR;
+    AFIO->PCFR1 |=  PWM_REMAP_SET;
 
-    /* PC2 = 代替機能プッシュプル出力 (T2CH2)。EMI対策でスルーレート(GPIO速度)を config 化 */
-    GPIOC->CFGLR &= ~(0xf << (4 * 2));
-    GPIOC->CFGLR |=  (PWM_GPIO_SPEED | GPIO_CNF_OUT_PP_AF) << (4 * 2);
+    /* PWM_PIN = 代替機能プッシュプル出力。EMI対策でスルーレート(GPIO速度)を config 化 */
+    PWM_GPIO_PORT->CFGLR &= ~(0xf << (4 * PWM_PINNUM));
+    PWM_GPIO_PORT->CFGLR |=  (PWM_GPIO_SPEED | GPIO_CNF_OUT_PP_AF) << (4 * PWM_PINNUM);
 
-    /* TIM2 リセット */
+    /* タイマ リセット */
+#if PWM_USES_TIM1
+    RCC->APB2PRSTR |=  RCC_APB2Periph_TIM1;
+    RCC->APB2PRSTR &= ~RCC_APB2Periph_TIM1;
+#else
     RCC->APB1PRSTR |=  RCC_APB1Periph_TIM2;
     RCC->APB1PRSTR &= ~RCC_APB1Periph_TIM2;
+#endif
 
-    TIM2->PSC     = PWM_PSC;
-    TIM2->ATRLR   = PWM_TOP;                              /* 16bit カウンタ (最大65535) */
-    TIM2->CHCTLR1 |= TIM_OC2M_2 | TIM_OC2M_1 | TIM_OC2PE; /* CH2=PWM mode1 + preload */
-    TIM2->CCER    |= TIM_CC2E;                            /* CH2 出力有効 (正論理) */
+    PWM_TIMREG->PSC   = PWM_PSC;
+    PWM_TIMREG->ATRLR = PWM_TOP;                          /* 16bit カウンタ (最大65535) */
+    PWM_CHCTLR |= PWM_OCM;                                /* 選択CH=PWM mode1 + preload */
+    PWM_TIMREG->CCER |= PWM_CCE;                          /* 選択CH 出力有効 (正論理) */
     /* ARPE: ARR(周期)もプリロード化。動作中に ATRLR を変えても更新イベント境界で
      * 反映されるため、スペクトラム拡散のディザで周期が途中で化ける/グリッチを防ぐ。 */
-    TIM2->CTLR1   |= TIM_ARPE;
-    TIM2->SWEVGR   = TIM_UG;                              /* シャドウ即反映(ARR/CVR ロード) */
-    TIM2->CTLR1   |= TIM_CEN;
+    PWM_TIMREG->CTLR1 |= TIM_ARPE;
+#if PWM_USES_TIM1
+    PWM_TIMREG->BDTR  |= TIM_MOE;                         /* 高機能タイマ(TIM1)は主出力許可が必須 */
+#endif
+    PWM_TIMREG->SWEVGR = TIM_UG;                          /* シャドウ即反映(ARR/CVR ロード) */
+    PWM_TIMREG->CTLR1 |= TIM_CEN;
 
     output_refresh();          /* 起動直後は g_dispLx=0(消灯) */
 }
@@ -286,7 +303,7 @@ static void spread_tick(void)
     int32_t arr = (int32_t)PWM_TOP + j;
     if (arr > 65535) arr = 65535;                        /* 16bit ARR 上限 */
     if (arr < 1)     arr = 1;                            /* 下限(0除算/0周期回避) */
-    TIM2->ATRLR = (uint32_t)arr;
+    PWM_TIMREG->ATRLR = (uint32_t)arr;
     pwm_write();                                          /* 新周期に CVR を再スケール */
 }
 /* 設定ミス防止: 拡散レンジを含めて 16bit(<=65535)に収め、下側も正に保つこと */
@@ -336,7 +353,7 @@ int main(void)
         g_on = STORE_ON(st);
     }
 #endif
-    tim2_pwm_init();       /* g_dispLx=0(消灯)で起動 */
+    pwm_init();            /* g_dispLx=0(消灯)で起動 (PWM_PIN から導出) */
 #if TEMP_PROTECT_ENABLE
     temp_init();
 #endif

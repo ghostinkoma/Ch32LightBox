@@ -1,7 +1,9 @@
 package com.lightbox.studio.config;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * LightBox config.h の全編集項目スキーマと、相互制約バリデーション。
@@ -18,8 +20,14 @@ public final class ConfigSchema {
         public Issue(boolean error, String message) { this.error = error; this.message = message; }
     }
 
-    /** ピン選択肢（CH32V003 J4M6 で現実的なもの）。 */
-    static final String[] PINS = {"PA1", "PA2", "PC1", "PC2", "PC4", "PD0", "PD1", "PD4", "PD5", "PD6"};
+    /** SOP8 (J4M6) 実在ピン。firmware pins.h の LB_PIN_IS_SOP8 と一致。 */
+    static final String[] PINS_ALL = {"PA1", "PA2", "PC1", "PC2", "PC4", "PD1"};
+    /** PWM 正出力が可能なピン (PC2=TIM2_CH2 / PC1=TIM2_CH4 / PA1=TIM1_CH2 / PC4=TIM1_CH4)。 */
+    static final String[] PINS_PWM = {"PC2", "PC1", "PA1", "PC4"};
+    /** ADC 対応ピン (PA2=ch0 / PA1=ch1 / PC4=ch2)。外付け温度センサ用。 */
+    static final String[] PINS_ADC = {"PA2", "PA1", "PC4"};
+    /** SWIO(書込/printf)予約ピン。 */
+    static final String SWIO_PIN = "PD1";
 
     public static List<ConfigField> fields() {
         List<ConfigField> f = new ArrayList<>();
@@ -27,6 +35,8 @@ public final class ConfigSchema {
         String S;
         // ---- ピン割当 ----
         S = "ピン割当 (HW結線固定・上級者向け)";
+        f.add(pin("PWM_PIN", S, "本体LED PWM出力", PINS_PWM).advanced()
+                .help("PWM可能ピンのみ。PC2=既定(TIM2_CH2,実機検証済)。他はコンパイル対応・実機未検証").build());
         f.add(pin("ENC_A_PIN", S, "エンコーダ A 相").advanced().help("内部プルアップ。HW結線と一致必須").build());
         f.add(pin("ENC_B_PIN", S, "エンコーダ B 相").advanced().help("内部プルアップ。HW結線と一致必須").build());
         f.add(pin("ENC_SW_PIN", S, "押しSW").advanced().help("内部プルアップ, 押下=Low").build());
@@ -112,9 +122,8 @@ public final class ConfigSchema {
                 .range(0, 125).unit("℃").build());
         f.add(ConfigField.of("DIE_TAU_MS", ConfigField.Type.INT).section(S).label("[DIE]熱時定数")
                 .range(100, 600000).unit("ms").build());
-        f.add(ConfigField.of("TEMP_SENSE_ANALOG", ConfigField.Type.INT).section(S).label("[EXT]ADCチャンネル")
-                .range(0, 7).help("2=PC4,7=PD4,0=PA2,1=PA1").build());
-        f.add(pin("TEMP_SENSE_PIN", S, "[EXT]センサピン").build());
+        f.add(pin("TEMP_SENSE_PIN", S, "[EXT]センサピン(ADC対応)", PINS_ADC)
+                .help("ADCチャネルは自動導出(PA2=0/PA1=1/PC4=2)").build());
         f.add(ConfigField.of("TEMP_CAL_T0_C", ConfigField.Type.INT).section(S).label("[EXT]校正基準温度")
                 .range(-40, 125).unit("℃").build());
         f.add(ConfigField.of("TEMP_CAL_ADC0", ConfigField.Type.INT).section(S).label("[EXT]T0時の生ADC")
@@ -139,10 +148,8 @@ public final class ConfigSchema {
         // ---- 常夜灯 ----
         S = "常夜灯 (WS2812/SK6812)";
         f.add(bool("NIGHTLIGHT_ENABLE", S, "常夜灯有効").build());
-        f.add(ConfigField.of("WS_PORT", ConfigField.Type.PORT).section(S).label("データ線ポート")
-                .option("GPIOA", "GPIOA").option("GPIOC", "GPIOC").option("GPIOD", "GPIOD").build());
-        f.add(ConfigField.of("WS_PINNUM", ConfigField.Type.INT).section(S).label("データ線ピン番号")
-                .range(0, 7).build());
+        f.add(pin("WS_DIN_PIN", S, "データ線GPIO", PINS_ALL)
+                .help("port/番号は自動導出。任意のSOP8ピン可").build());
         f.add(ConfigField.of("WS_COUNT", ConfigField.Type.INT).section(S).label("LED個数")
                 .range(1, 64).build());
         f.add(ConfigField.of("NIGHTLIGHT_PERIOD_MS", ConfigField.Type.INT).section(S).label("明↔暗周期")
@@ -171,9 +178,23 @@ public final class ConfigSchema {
     }
 
     private static ConfigField.Builder pin(String key, String section, String label) {
+        return pin(key, section, label, PINS_ALL);
+    }
+
+    /** 能力で絞ったピン選択肢を持つフィールド（PWMはPINS_PWM、ADCはPINS_ADC 等）。 */
+    private static ConfigField.Builder pin(String key, String section, String label, String[] allowed) {
         ConfigField.Builder b = ConfigField.of(key, ConfigField.Type.PIN).section(section).label(label);
-        for (String p : PINS) b.option(p, p);
+        for (String p : allowed) b.option(p, p);
         return b;
+    }
+
+    private static void addUse(List<String[]> list, String pin, String label) {
+        if (pin != null && !pin.isEmpty()) list.add(new String[]{pin, label});
+    }
+
+    private static boolean contains(String[] arr, String v) {
+        for (String s : arr) if (s.equals(v)) return true;
+        return false;
     }
 
     private static ConfigField.Builder bool(String key, String section, String label) {
@@ -231,20 +252,47 @@ public final class ConfigSchema {
         if (color > maxColor)
             out.add(new Issue(true, "常夜灯: WS_MAX_COLOR が WS_ORDER(" + wsOrder + ") の桁(" + digits + "hex)に収まりません"));
 
-        // PC4 排他（常夜灯 / 外付け温度センサ / 警告灯）
-        List<String> pc4users = new ArrayList<>();
-        boolean nlOn = cf.getLong("NIGHTLIGHT_ENABLE", 0) == 1;
-        boolean nlPc4 = "GPIOC".equals(cf.getSymbol("WS_PORT", "")) && cf.getLong("WS_PINNUM", -1) == 4;
-        if (nlOn && nlPc4) pc4users.add("常夜灯(WS_PORT=GPIOC,WS_PINNUM=4)");
+        // ---- 全機能横断のピン割当検証（firmware pins.h と対応）: 衝突 / 能力 / 存在 / SWIO ----
         boolean tempOn = cf.getLong("TEMP_PROTECT_ENABLE", 0) == 1;
         boolean tempExt = "TEMP_SOURCE_EXTERNAL".equals(cf.getSymbol("TEMP_SOURCE", ""));
-        boolean tempPc4 = "PC4".equals(cf.getSymbol("TEMP_SENSE_PIN", ""));
-        if (tempOn && tempExt && tempPc4) pc4users.add("外付け温度センサ(TEMP_SENSE_PIN=PC4)");
-        boolean warnLedOn = cf.getLong("WARN_LED_ENABLE", 0) == 1;
-        boolean warnLedPc4 = "PC4".equals(cf.getSymbol("WARN_LED_PIN", ""));
-        if (warnLedOn && warnLedPc4) pc4users.add("警告灯(WARN_LED_PIN=PC4)");
-        if (pc4users.size() > 1)
-            out.add(new Issue(true, "PC4 排他違反: " + String.join(" / ", pc4users) + " が同時にPC4を使っています(SOP8は1つだけ)"));
+
+        // 有効な機能のみ (pin, ラベル) を収集
+        List<String[]> pinUse = new ArrayList<>();
+        addUse(pinUse, cf.getSymbol("PWM_PIN", ""), "PWM(PWM_PIN)");
+        addUse(pinUse, cf.getSymbol("ENC_A_PIN", ""), "エンコーダA(ENC_A_PIN)");
+        addUse(pinUse, cf.getSymbol("ENC_B_PIN", ""), "エンコーダB(ENC_B_PIN)");
+        addUse(pinUse, cf.getSymbol("ENC_SW_PIN", ""), "押しSW(ENC_SW_PIN)");
+        if (cf.getLong("NIGHTLIGHT_ENABLE", 0) == 1)
+            addUse(pinUse, cf.getSymbol("WS_DIN_PIN", ""), "常夜灯(WS_DIN_PIN)");
+        if (tempOn && tempExt)
+            addUse(pinUse, cf.getSymbol("TEMP_SENSE_PIN", ""), "外付け温度(TEMP_SENSE_PIN)");
+        if (cf.getLong("WARN_LED_ENABLE", 0) == 1)
+            addUse(pinUse, cf.getSymbol("WARN_LED_PIN", ""), "警告灯(WARN_LED_PIN)");
+
+        // 衝突: 同一ピンに2機能以上
+        Map<String, List<String>> byPin = new LinkedHashMap<>();
+        for (String[] u : pinUse) byPin.computeIfAbsent(u[0], k -> new ArrayList<>()).add(u[1]);
+        for (Map.Entry<String, List<String>> e : byPin.entrySet())
+            if (e.getValue().size() > 1)
+                out.add(new Issue(true, "ピン衝突: " + e.getKey() + " に " + String.join(" / ", e.getValue()) + " が同時割当(1ピン1機能)"));
+
+        // 能力: PWM_PIN は PWM 可能ピン / TEMP_SENSE_PIN(有効時) は ADC 対応ピン
+        String pwmPin = cf.getSymbol("PWM_PIN", "");
+        if (!pwmPin.isEmpty() && !contains(PINS_PWM, pwmPin))
+            out.add(new Issue(true, "PWM_PIN (" + pwmPin + ") は PWM 可能ピンではありません: " + String.join("/", PINS_PWM)));
+        if (tempOn && tempExt) {
+            String tp = cf.getSymbol("TEMP_SENSE_PIN", "");
+            if (!tp.isEmpty() && !contains(PINS_ADC, tp))
+                out.add(new Issue(true, "TEMP_SENSE_PIN (" + tp + ") は ADC 対応ピンではありません: " + String.join("/", PINS_ADC)));
+        }
+
+        // 存在: すべての割当ピンは SOP8 実在ピン / SWIO(PD1) は警告
+        for (String[] u : pinUse) {
+            if (!contains(PINS_ALL, u[0]))
+                out.add(new Issue(true, u[1] + " のピン " + u[0] + " は SOP8 実在ピンではありません: " + String.join("/", PINS_ALL)));
+            if (SWIO_PIN.equals(u[0]))
+                out.add(new Issue(false, u[1] + " が SWIO(" + SWIO_PIN + ")を使用。書込/debugprintf と競合します"));
+        }
 
         // ---- 警告（エラーではない） ----
         if (cf.getLong("DEBUG_LOG", 0) == 1)

@@ -39,9 +39,11 @@ Detailed specifications are in [SPEC.md](documents/SPEC.md), and design decision
 | PA1 | ENC_A | Encoder Phase A (Internal pull-up, Common=GND) |
 | PC1 | ENC_B | Encoder Phase B (Internal pull-up, Common=GND) |
 | PA2 | ENC_SW | Push Switch (Internal pull-up, Active Low) |
-| PC2 | PWM | **Main LED Output** (TIM2_CH2 remap1) |
+| PC2 | PWM | **Main LED Output** (default `PWM_PIN`=PC2 → TIM2_CH2 remap1) |
 | PC4 | (Selectable) | **WS2812 Nightlight** / External Temp Sensor / Warning LED (Mutually exclusive, choose one) |
 | PD1 | SWIO | Programming / debugprintf (Reserved) |
+
+> **Feature ↔ pin assignment is done entirely in `config.h`** (one pin macro per feature: `PWM_PIN`, `ENC_*_PIN`, `WS_DIN_PIN`, `TEMP_SENSE_PIN`, `WARN_LED_PIN`). `source/pins.h` validates capabilities (PWM-/ADC-capable pins) and pin conflicts at compile time, and the LightBox Studio config editor mirrors the same checks. See the “Feature ↔ Pin Assignment” section of [CONFIG_REFERENCE.md](documents/CONFIG_REFERENCE.md).
 
 > **Temperature protection is OFF by default** (die estimation rejected due to false shutdowns). Watchdog and EMI mitigations **require no external pins**, allowing PC4—the only remaining free pin on SOP8—to be used for the nightlight.
 > If an external physical temperature sensor or warning LED is needed, allocate PC4 accordingly (mutually exclusive with the nightlight). To use more features simultaneously, switch to TSSOP20/QFN (F4P6) and assign individual pins in `config.h`.

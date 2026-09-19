@@ -15,6 +15,7 @@
 
 #include "ch32fun.h"
 #include "config.h"
+#include "pins.h"       /* WS_DIN_PIN → WS_GPIO_PORT / WS_GPIO_PINNUM */
 #include "cie.h"
 #include "ws2812b_simple.h"
 
@@ -69,7 +70,7 @@ static uint32_t g_nlRefresh   = 0;      /* 最終送信 tick */
 static void ws_send_rgbw(uint8_t r, uint8_t g, uint8_t b, uint8_t w)
 {
     for (uint32_t k = 0; k < WS_COUNT; k++) ws_pack(r, g, b, w, &g_nlBuf[k * WS_BPP]);
-    WS2812BSimpleSend(WS_PORT, WS_PINNUM, g_nlBuf, (int)sizeof(g_nlBuf));
+    WS2812BSimpleSend(WS_GPIO_PORT, WS_GPIO_PINNUM, g_nlBuf, (int)sizeof(g_nlBuf));
 }
 
 static inline void ws_off(void) { ws_send_rgbw(0, 0, 0, 0); }

@@ -12,6 +12,7 @@
 
 #include "ch32fun.h"
 #include "config.h"
+#include "pins.h"      /* TEMP_SENSE_PIN → TEMP_ADC_CH (ADCチャネル自動導出) */
 
 #if TEMP_SOURCE == TEMP_SOURCE_EXTERNAL
 _Static_assert(TEMP_CAL_SLOPE_X100 != 0, "TEMP_CAL_SLOPE_X100 は 0 不可(0除算)");
@@ -41,7 +42,7 @@ static void temp_init(void)
 static int16_t temp_sample(uint16_t applied_duty)
 {
     (void)applied_duty;
-    int32_t adc = funAnalogRead(TEMP_SENSE_ANALOG);            /* 10bit */
+    int32_t adc = funAnalogRead(TEMP_ADC_CH);                  /* 10bit (chは TEMP_SENSE_PIN から導出) */
     int32_t c = TEMP_CAL_T0_C +
                 (adc - (int32_t)TEMP_CAL_ADC0) * 100 / (int32_t)TEMP_CAL_SLOPE_X100;
     if (c < -40) c = -40;

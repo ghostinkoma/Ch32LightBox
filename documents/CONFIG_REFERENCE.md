@@ -5,14 +5,19 @@
 Full reference for all parameters in `source/config.h`. Rebuild after changing any values (refer to [README](../README.md)).
 Pins are named using ch32fun pin nomenclature (`PA1`, `PC2`, `PD0`, etc.).
 
-## Pin Assignments
+## Pin Assignments (one macro per feature)
+
+Each feature is assigned with a **single pin macro**. `source/pins.h` derives the GPIO
+port/number, ADC channel, and PWM timer/channel/remap automatically, and rejects capability
+violations (non-PWM / non-ADC pins) and pin conflicts (two features on one pin) at **compile
+time** (`_Static_assert`). SOP8 (J4M6) pins: `PA1 PA2 PC1 PC2 PC4 PD1(SWIO)`.
 
 | Item | Default | Description |
 |------|---------|-------------|
+| `PWM_PIN` | `PC2` | Main LED PWM output. PWM-capable pins only: `PC2`(TIM2_CH2) / `PC1`(TIM2_CH4) / `PA1`(TIM1_CH2) / `PC4`(TIM1_CH4). **`PC2` is the hardware-verified default; other pins are compile-supported but not hardware-verified** |
 | `ENC_A_PIN` | `PA1` | Encoder Phase A (Internal Pull-Up) |
 | `ENC_B_PIN` | `PC1` | Encoder Phase B (Internal Pull-Up) |
 | `ENC_SW_PIN` | `PA2` | Push Button Switch (Internal Pull-Up, Active Low) |
-| (PWM Output) | `PC2` | Main LED = Fixed to TIM2_CH2 (remap1) |
 
 ## PWM (16-bit TIM2)
 
@@ -86,8 +91,7 @@ Pins are named using ch32fun pin nomenclature (`PA1`, `PC2`, `PD0`, etc.).
 | **[DIE]** `DIE_AMBIENT_C` | `28` | Baseline ambient temperature at zero load ($^\circ\text{C}$) |
 | **[DIE]** `DIE_RISE_AT_FULL_C` | `60` | Steady-state temperature rise at 100% duty cycle ($^\circ\text{C}$). *Adjust based on real hardware measurement* |
 | **[DIE]** `DIE_TAU_MS` | `30000` | Thermal time constant (ms). Larger values smooth out temperature changes |
-| **[EXT]** `TEMP_SENSE_ANALOG` | `2` | Sensor ADC Channel (`2` = PC4, `7` = PD4, `0` = PA2, `1` = PA1) |
-| **[EXT]** `TEMP_SENSE_PIN` | `PC4` | Sensor input pin (Physical pin corresponding to `TEMP_SENSE_ANALOG`) |
+| **[EXT]** `TEMP_SENSE_PIN` | `PC4` | Analog sensor input pin. **ADC-capable pins only: `PA2`(ch0) / `PA1`(ch1) / `PC4`(ch2)** (the ADC channel is derived automatically) |
 | **[EXT]** `TEMP_CAL_T0_C` | `25` | Calibration reference temperature |
 | **[EXT]** `TEMP_CAL_ADC0` | `512` | Raw 10-bit ADC value at $T_{0\text{C}}$ (*Requires calibration*) |
 | **[EXT]** `TEMP_CAL_SLOPE_X100` | `-300` | $\text{ADC counts} / ^\circ\text{C} \times 100$ (Signed, non-zero) (*Requires calibration*) |
@@ -98,7 +102,7 @@ Pins are named using ch32fun pin nomenclature (`PA1`, `PC2`, `PD0`, etc.).
 | `THERMAL_THROTTLE_PCT` | `20` | Output power reduction step during throttling (%) (accumulates every $N$ trips) |
 | `THERMAL_THROTTLE_MAX` | `80` | Maximum power reduction limit (%) ($< 100$) |
 | `WARN_LED_ENABLE` | `0` | Set to `1` to drive `WARN_LED_PIN` High during overheat conditions |
-| `WARN_LED_PIN` | `PC4` | Warning LED pin (Mutually exclusive with Nightlight/External Sensor on SOP8 packages) |
+| `WARN_LED_PIN` | `PC4` | Warning LED pin (any SOP8 GPIO; conflicts with other features are caught at compile time) |
 
 ## Watchdog Timer
 
@@ -124,15 +128,14 @@ $$\text{temp} = \text{TEMP\_CAL\_T0\_C} + \frac{(\text{adc} - \text{TEMP\_CAL\_A
 | Item | Default | Description |
 |------|---------|-------------|
 | `NIGHTLIGHT_ENABLE` | `1` | Enables nightlight feature |
-| `WS_PORT` | `GPIOD` | Data line GPIO port |
-| `WS_PINNUM` | `0` | Data line pin number (`0` = PD0) |
+| `WS_DIN_PIN` | `PC4` | Data line GPIO (any SOP8 pin; GPIO port/number derived automatically) |
 | `WS_COUNT` | `1` | Number of addressable LEDs |
 | `NIGHTLIGHT_PERIOD_MS` | `4000` | Duration for 1 full bright $\rightarrow$ dim breathing cycle in ms (**2 to 60000**). Upper limit provides safety margin against 32-bit SysTick wrap ($\approx 89.5\text{s}$) |
 | `NIGHTLIGHT_INTERVAL_MS` | `3000` | Complete OFF delay following breathing cycle in ms (**$\le 60000$**) |
 | `NIGHTLIGHT_REFRESH_MS` | `30` | Refresh rate for data transmission (smoothness) |
 | `NIGHTLIGHT_BOOT_TEST_MS` | `1500` | Illuminates WS LED with configured color briefly at startup (for wiring diagnostics; `0` = disabled) |
-| `WS_ORDER` | `WS_ORDER_GRB` | Chip color byte order: `WS_ORDER_GRB`, `RGB`, `GRBW`, or `RGBW` |
-| `WS_MAX_COLOR` | `0x403008` | Maximum color intensity. RGB = **`0xRRGGBB` (6 hex digits)** / RGBW = **`0xRRGGBBWW` (8 hex digits)** |
+| `WS_ORDER` | `WS_ORDER_RGBW` | Chip color byte order: `WS_ORDER_GRB`, `RGB`, `GRBW`, or `RGBW` (default matches the bundled SK6812 RGBW) |
+| `WS_MAX_COLOR` | `0x40300810` | Maximum color intensity. RGB = **`0xRRGGBB` (6 hex digits)** / RGBW = **`0xRRGGBBWW` (8 hex digits)** |
 
 ### Color Order & RGBW Configuration Examples
 - Standard WS2812 (GRB): `#define WS_ORDER WS_ORDER_GRB` / `#define WS_MAX_COLOR 0x403008`
@@ -140,11 +143,24 @@ $$\text{temp} = \text{TEMP\_CAL\_T0\_C} + \frac{(\text{adc} - \text{TEMP\_CAL\_A
 - **SK6812 RGBW**: `#define WS_ORDER WS_ORDER_GRBW` / `#define WS_MAX_COLOR 0x40300810` ($R=0\text{x}40, G=0\text{x}30, B=0\text{x}08, W=0\text{x}10$)
 - *Note:* The hex length of `WS_MAX_COLOR` must strictly match the selected `WS_ORDER` (with or without White channel).
 
-## Quick Pin Map (Default, **Full functionality on SOP8 / J4M6**)
-`PA1` = ENC_A / `PC1` = ENC_B / `PA2` = ENC_SW / `PC2` = PWM / `PD1` = SWIO.  
-The remaining pin **`PC4` can be assigned to ONLY ONE of the following (mutually exclusive)**:
-- WS2812 Nightlight
-- External Temperature Sensor
-- Warning LED
+## Feature ↔ Pin Assignment (config.h only, SOP8 / J4M6)
 
-*Note:* Software-based features such as die-estimated temperature, thermal cutoff, thermal throttling, watchdog timer, and EMI spread spectrum **do not require any dedicated GPIO pins**. If you require multiple pin-bound features simultaneously, switch to a package with more pins such as TSSOP20 or QFN (e.g., CH32V003F4P6).
+Assign each feature with its single pin macro in `config.h`. `source/pins.h` validates every
+assignment at compile time. SOP8 pin capabilities:
+
+| Pin | GPIO | ADC ch | PWM route (positive output) | Default use |
+|-----|------|--------|------------------------------|-------------|
+| `PA1` | GPIOA/1 | ch1 | TIM1_CH2 | ENC_A |
+| `PA2` | GPIOA/2 | ch0 | — (CH2N complementary only) | ENC_SW |
+| `PC1` | GPIOC/1 | — | TIM2_CH4 | ENC_B |
+| `PC2` | GPIOC/2 | — | **TIM2_CH2** ★default PWM | PWM |
+| `PC4` | GPIOC/4 | ch2 | TIM1_CH4 | Nightlight / Temp / Warn LED |
+| `PD1` | GPIOD/1 | — | — | **SWIO (flash/printf reserved)** |
+
+Rules enforced at compile time (and mirrored in the GUI config editor):
+- **`PWM_PIN`** must be a PWM-capable pin (`PC2`/`PC1`/`PA1`/`PC4`). `PC2` is hardware-verified; others are compile-supported only.
+- **`TEMP_SENSE_PIN`** (external temp) must be ADC-capable (`PA2`/`PA1`/`PC4`); the ADC channel is derived automatically.
+- **No two enabled features may share a pin** (conflict → `_Static_assert` error). This subsumes the old "PC4 mutual exclusion" of Nightlight / External Sensor / Warning LED.
+- Assigning **`PD1`** to a feature emits a `#warning` (it collides with SWIO flashing/`debugprintf`).
+
+*Note:* Software-only features (die-estimated temperature, thermal cutoff/throttling, watchdog, EMI spread spectrum) **need no GPIO pin**. To run more pin-bound features simultaneously than SOP8 allows, switch to a larger package such as TSSOP20 / QFN (CH32V003F4P6) — that package's pin set is out of scope for this table.

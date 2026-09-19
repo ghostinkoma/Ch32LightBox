@@ -8,7 +8,15 @@
 #define CONFIG_H
 
 /* ===================== ピン割当 (SOP8 / J4M6) =====================
- * PWM 出力は PC2 = TIM2_CH2(remap1) 固定 (HW結線・実証済経路)。 */
+ * 「1機能=1ピンマクロ」で割当てる。port/ピン番号・ADCチャネル・PWMのタイマ/チャネル/remap は
+ * pins.h が自動導出し、ハード能力違反(PWM/ADC不可ピン)とピン衝突(2機能が同一ピン)を
+ * コンパイル時に _Static_assert で弾く。SOP8 実在ピン: PA1/PA2/PC1/PC2/PC4/PD1(SWIO予約)。
+ *
+ *   PWM_PIN 選択肢(正出力): PC2=TIM2_CH2(remap1,既定) / PC1=TIM2_CH4(remap1)
+ *                          / PA1=TIM1_CH2 / PC4=TIM1_CH4
+ *   ADC対応ピン(外付け温度): PA2/PA1/PC4 のみ
+ *   ※PC2 以外の PWM は「コンパイル対応・実機未検証」。既定(PC2)は従来と挙動不変。 */
+#define PWM_PIN      PC2     /* 本体LED PWM 出力 (既定 PC2=TIM2_CH2 remap1) */
 #define ENC_A_PIN    PA1     /* エンコーダ A 相 (内部プルアップ, 共通=GND) */
 #define ENC_B_PIN    PC1     /* エンコーダ B 相 (内部プルアップ, 共通=GND) */
 #define ENC_SW_PIN   PA2     /* 押しSW (内部プルアップ, 押下=Low, 短押し=ON/OFF) */
@@ -141,7 +149,7 @@
  *        「おおよその値でよい/28℃からの上昇分」という用途に合致。値は目安。
  *
  *  (B) TEMP_SOURCE_EXTERNAL … 外付けアナログ温度センサ(NTC等)を MOSFET に熱結合し
- *      ADC(TEMP_SENSE_ANALOG/PIN)で実測。SOP8ではピンが要るので大きめパッケージ向け。
+ *      ADC(TEMP_SENSE_PIN=ADC対応ピン。chは自動導出)で実測。SOP8ではピンが要る(常夜灯/警告灯と排他)。
  *      近似1次校正 TEMP_CAL_*(要実機校正)。
  *
  *  共通: WARN_TEMP_C 超で遮断、WARN_TEMP_HYST_C 下がって再開。
@@ -164,9 +172,9 @@
 #define DIE_RISE_AT_FULL_C    45       /* デューティ100%連続時の推定上昇(℃)。28+45=73<80で誤遮断せず */
 #define DIE_TAU_MS            30000u   /* 熱時定数(ms) 大きいほどゆっくり上下 */
 
-/* --- (B) 外付けセンサ --- */
-#define TEMP_SENSE_ANALOG     2        /* ADCチャンネル (2=PC4) ※SOP8で使うなら警告灯と排他 */
-#define TEMP_SENSE_PIN        PC4
+/* --- (B) 外付けセンサ --- ADCチャネルは TEMP_SENSE_PIN から pins.h が自動導出。
+ *   ADC対応ピン: PA2(ch0)/PA1(ch1)/PC4(ch2)。SOP8で使うなら常夜灯/警告灯と排他(衝突検出あり)。 */
+#define TEMP_SENSE_PIN        PC4      /* 外付けNTC等のアナログ入力ピン (ADC対応ピンのみ) */
 #define TEMP_CAL_T0_C         25
 #define TEMP_CAL_ADC0         512      /* T0_C 時の生ADC(10bit) ※要校正 */
 #define TEMP_CAL_SLOPE_X100  (-300)    /* ADC/℃ ×100 (符号付, 0不可) ※要校正 */
@@ -191,10 +199,9 @@
  *   ・NIGHTLIGHT_INTERVAL_MS(i): 周期の後に完全オフする時間。
  *   ・WS_MAX_COLOR: 最大時の色。RGB品は 0xRRGGBB / RGBW品(SK6812)は 0xRRGGBBWW。
  *   ・WS_ORDER: チップの実バイト並び(製品で異なる)。GRB/RGB/GRBW/RGBW から選ぶ。
- *   ・WS_PORT/WS_PINNUM: データ線のGPIO。 */
+ *   ・WS_DIN_PIN: データ線のGPIO(1ピンマクロ。port/番号は pins.h が自動導出)。 */
 #define NIGHTLIGHT_ENABLE     1
-#define WS_PORT               GPIOC  /* データ線ポート (SOP8既定: PC4) */
-#define WS_PINNUM             4      /* データ線ピン番号 (4=PC4) */
+#define WS_DIN_PIN            PC4    /* データ線GPIO (SOP8既定: PC4)。任意のSOP8ピン可 */
 #define WS_COUNT              1      /* LED 個数 */
 #define NIGHTLIGHT_PERIOD_MS  4000u  /* n: 明→暗 1往復(ms) */
 #define NIGHTLIGHT_INTERVAL_MS 3000u /* i: 周期後の完全オフ(ms) */

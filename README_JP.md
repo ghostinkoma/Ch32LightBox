@@ -42,9 +42,11 @@
 | PA1 | ENC_A | エンコーダ A 相（内部プルアップ, 共通=GND） |
 | PC1 | ENC_B | エンコーダ B 相（内部プルアップ, 共通=GND） |
 | PA2 | ENC_SW | 押しSW（内部プルアップ, 押下=Low） |
-| PC2 | PWM | **本体 LED 出力**（TIM2_CH2 remap1） |
+| PC2 | PWM | **本体 LED 出力**（既定 `PWM_PIN`=PC2 → TIM2_CH2 remap1） |
 | PC4 | （選択） | **常夜灯WS2812** / 外付け温度センサ / 警告灯 のいずれか1つ（排他） |
 | PD1 | SWIO | 書込 / debugprintf（温存） |
+
+> **機能↔ピンの割当は `config.h` だけで完結**（1機能=1ピンマクロ: `PWM_PIN`・`ENC_*_PIN`・`WS_DIN_PIN`・`TEMP_SENSE_PIN`・`WARN_LED_PIN`）。`source/pins.h` が能力（PWM可/ADC可）とピン衝突をコンパイル時に検証し、LightBox Studio の設定エディタも同じ検証を行う。詳細は [CONFIG_REFERENCE_JP.md](documents/CONFIG_REFERENCE_JP.md) の「機能↔ピン割当」節。
 
 > **温度保護は既定OFF**（ダイ推定は誤遮断のため不採用）。ウォッチドッグ・
 > EMI対策も**すべてピン不要**なので、SOP8 の唯一の空きピン PC4 を常夜灯に使える。

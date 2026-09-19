@@ -1,0 +1,13 @@
+# ビルド中間物 / テスト出力（dist/*.jar は同梱コミット対象なので除外しない）
+build/
+test-classes/
+*.class
+
+# 初回セットアップが取得する大容量ツールチェーン / ポータブルJRE（リポジトリに含めない）
+dist/toolchain/
+dist/runtime/
+
+# ユーザ環境固有・生成物
+settings.properties
+toolchain.manifest.properties
+config.h.bak

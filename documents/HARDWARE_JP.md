@@ -29,7 +29,7 @@ CH32V003 LED 調光コントローラの実基板。KiCad プロジェクト一�
 | 4 VDD | VDD | 電源 / J1-9 | — |
 | 5 PC1 | ENC B | SW2-B / J1-6 | `ENC_B_PIN=PC1` |
 | 6 PC2 | PWM → R1 → Q1ゲート | R1 / U1-6 | PWM=PC2（固定） |
-| 7 PC4 | LED2810（SK6812 DIN） | D1-2 / J1-2 | `WS_PORT=GPIOC,WS_PINNUM=4` |
+| 7 PC4 | LED2810（SK6812 DIN） | D1-2 / J1-2 | `WS_DIN_PIN=PC4` |
 | 8 PD1 | SW IO（SWIO 書込/debug） | J1-3 | 温存 |
 
 → **PCB のピン配線はフラッシュ済みファームと完全一致**（実機で全機能動作を確認済み）。
