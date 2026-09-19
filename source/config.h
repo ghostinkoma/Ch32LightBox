@@ -210,6 +210,21 @@
  *   ・WS_ORDER: チップの実バイト並び(製品で異なる)。GRB/RGB/GRBW/RGBW から選ぶ。
  *   ・WS_DIN_PIN: データ線のGPIO(1ピンマクロ。port/番号は pins.h が自動導出)。 */
 #define NIGHTLIGHT_ENABLE     1
+/* --- 常夜灯タイプ: ①WS2812(従来・演出優先) / ②単色LED(低電力・専用ピン) --- */
+#define NL_TYPE_WS2812        0
+#define NL_TYPE_SINGLE        1
+#define NIGHTLIGHT_TYPE       NL_TYPE_WS2812   /* 既定=WS2812(従来) */
+
+/* --- ②単色LED常夜灯 (NIGHTLIGHT_TYPE=NL_TYPE_SINGLE 時に有効) ---
+ *   専用GPIO(NL_LED_PIN)を n 秒おきに x ms 点灯。
+ *   NL_USE_PWM=0: GPIO 単純ON/OFF(最小電力。深い低電力=Standby の対象)
+ *   NL_USE_PWM=1: 点灯中だけソフトPWMで明滅(演出。MCU稼働=Standby非対象/任意GPIO可) */
+#define NL_LED_PIN            PC4    /* 単色LED常夜灯の専用ピン(任意SOP8 GPIO) */
+#define NL_PERIOD_S           5u     /* n: 点灯周期(秒)。深い低電力時は 1..30(AWU 1サイクル上限) */
+#define NL_ON_MS              100u   /* x: 1回の点灯時間(ms)。NL_PERIOD_S*1000 未満 */
+#define NL_USE_PWM            0      /* 0=GPIO単純ON/OFF(最小電力) / 1=ソフトPWM明滅(演出) */
+
+/* --- ①WS2812 パラメータ (NIGHTLIGHT_TYPE=NL_TYPE_WS2812 時) --- */
 #define WS_DIN_PIN            PC4    /* データ線GPIO (SOP8既定: PC4)。任意のSOP8ピン可 */
 #define WS_COUNT              1      /* LED 個数 */
 #define NIGHTLIGHT_PERIOD_MS  4000u  /* n: 明→暗 1往復(ms) */
@@ -232,6 +247,17 @@
 /* 最大時の色。WS_ORDER が RGBW系(GRBW/RGBW)なら 0xRRGGBBWW、そうでなければ 0xRRGGBB。
  * ※桁数を WS_ORDER に合わせること(RGB=6桁 / RGBW=8桁)。RGBW順なので8桁。 */
 #define WS_MAX_COLOR   0x40300810u   /* R=0x40 G=0x30 B=0x08 W=0x10 (電球色寄り, 常夜灯) ※好みで調整 */
+
+/* ===================== 深い低電力モード (Standby + AWU) ★実験的・実機未検証 =====
+ * バッテリ駆動向け。単色LED常夜灯を n 秒おきに x ms だけ点け、その間 MCU は Standby で眠る。
+ * 押しSW(EXTI)で起水して一定時間は通常ディマーとして動作、無操作で再びスリープへ戻る。
+ *   ・採用条件: NIGHTLIGHT_ENABLE=1 かつ NIGHTLIGHT_TYPE=NL_TYPE_SINGLE かつ NL_USE_PWM=0。
+ *     (WS2812 や PWM 明滅は演出優先のため deep sleep 非対象)
+ *   ・NL_PERIOD_S は 1..30 秒(AWU 1サイクル上限。LSI≈128kHz)。
+ *   ・再書込みセーフティ: 起動時に押しSWを押していれば通常モードに留まりスリープしない。
+ * ★Standby 復帰/AWU 周期/実消費は実機で要確認。既定 0 では一切影響しない(従来と同一)。 */
+#define LOW_POWER_MODE          0     /* 1 で deep sleep 常夜灯を有効 (上記採用条件が必須) */
+#define LOWPWR_ACTIVE_WINDOW_S  30u   /* 押しSW起水後、通常動作を維持する秒数(無操作でスリープ復帰) */
 
 /* ===================== ウォッチドッグ (IWDG) =====================
  * 独立ウォッチドッグ。ファームが固まったら自動リセットして復帰する安全装置。

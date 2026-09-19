@@ -25,7 +25,8 @@ To prioritize reproducing brightness as **perceived by the human eye**, the PWM 
 | **Overheat Failsafe** (Default OFF) | Forcefully shuts off main PWM (MOSFET) when overheated → resumes when cooled down. Thermal throttles to $j$\% after $n$ cycles. **Die estimation disabled due to false triggers (`TEMP_PROTECT_ENABLE 0`)**; enable only when using an external NTC sensor. |
 | **Watchdog** | IWDG. Automatically resets on system freeze for self-recovery. |
 | **EMI Mitigation** | Configurable PWM slew rate (GPIO speed) + spread spectrum (period dithering, brightness invariant). |
-| **WS2812/SK6812 Nightlight** | When completely dark, breathes light↔dark for $n$ seconds based on CIE curve, then pauses for $i$ seconds. Customizable RGB/RGBW, color order, and max color. |
+| **Nightlight (WS2812 or single LED)** | When completely dark: ①WS2812/SK6812 breathes light↔dark on the CIE curve (RGB/RGBW, color order, max color), or ②a single-color LED blinks `x` ms every `n` s. |
+| **Deep Low-Power (experimental)** | Optional battery mode (`LOW_POWER_MODE`): single-LED nightlight with the MCU in Standby between blinks (AWU periodic wake, push-switch EXTI wake). Default off; see CONFIG_REFERENCE. |
 | **Soft Start** | Smoothly fades in/out to target brightness on power ON/OFF based on CIE curve (duration set in config, disabled if 0, max 65535 ms). |
 | **Push Switch** | Short press toggles ON/OFF (time-based debouncing; smoothly tracks re-triggering during active fades). |
 

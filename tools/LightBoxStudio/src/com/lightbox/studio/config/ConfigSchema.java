@@ -148,9 +148,22 @@ public final class ConfigSchema {
         f.add(pin("WARN_LED_PIN", S, "警告灯ピン").build());
 
         // ---- 常夜灯 ----
-        S = "常夜灯 (WS2812/SK6812)";
+        S = "常夜灯";
         f.add(bool("NIGHTLIGHT_ENABLE", S, "常夜灯有効").build());
-        f.add(pin("WS_DIN_PIN", S, "データ線GPIO", PINS_ALL)
+        f.add(ConfigField.of("NIGHTLIGHT_TYPE", ConfigField.Type.ENUM).section(S).label("常夜灯タイプ")
+                .option("NL_TYPE_WS2812", "①WS2812/SK6812 (演出優先)")
+                .option("NL_TYPE_SINGLE", "②単色LED (低電力・専用ピン)")
+                .help("②単色LED+PWM無しのときだけ深い低電力(Standby)の対象").build());
+        // ②単色LED (NIGHTLIGHT_TYPE=NL_TYPE_SINGLE)
+        f.add(pin("NL_LED_PIN", S, "[単色]専用ピン", PINS_ALL).help("任意のSOP8 GPIO").build());
+        f.add(ConfigField.of("NL_PERIOD_S", ConfigField.Type.INT).section(S).label("[単色]点灯周期")
+                .range(1, 60).unit("s").help("n秒おき。深い低電力時は1..30").build());
+        f.add(ConfigField.of("NL_ON_MS", ConfigField.Type.INT).section(S).label("[単色]点灯時間")
+                .range(1, 60000).unit("ms").help("x ms。NL_PERIOD_S*1000 未満").build());
+        f.add(bool("NL_USE_PWM", S, "[単色]PWM明滅")
+                .help("0=GPIO単純ON/OFF(最小電力/deep sleep可) 1=ソフトPWM明滅(演出/不可)").build());
+        // ①WS2812 パラメータ (以下 従来)
+        f.add(pin("WS_DIN_PIN", S, "[WS2812]データ線GPIO", PINS_ALL)
                 .help("port/番号は自動導出。任意のSOP8ピン可").build());
         f.add(ConfigField.of("WS_COUNT", ConfigField.Type.INT).section(S).label("LED個数")
                 .range(1, 64).build());
@@ -175,6 +188,13 @@ public final class ConfigSchema {
         f.add(bool("WDT_ENABLE", S, "IWDG有効").build());
         f.add(ConfigField.of("WDT_TIMEOUT_MS", ConfigField.Type.INT).section(S).label("タイムアウト")
                 .range(100, 8190).unit("ms").help("ファーム制約で100..8190").build());
+
+        // ---- 深い低電力 ----
+        S = "深い低電力 (Standby+AWU) ★実験的";
+        f.add(bool("LOW_POWER_MODE", S, "深い低電力モード")
+                .help("要: 単色LED&PWM無し&NL_PERIOD_S≤30&WDT無効。バッテリ向け(実機未検証)").build());
+        f.add(ConfigField.of("LOWPWR_ACTIVE_WINDOW_S", ConfigField.Type.INT).section(S).label("起水後アクティブ秒数")
+                .range(5, 60).unit("s").help("押しSW起水後に通常動作を維持する秒数").build());
 
         return f;
     }
@@ -264,8 +284,11 @@ public final class ConfigSchema {
         addUse(pinUse, cf.getSymbol("ENC_A_PIN", ""), "エンコーダA(ENC_A_PIN)");
         addUse(pinUse, cf.getSymbol("ENC_B_PIN", ""), "エンコーダB(ENC_B_PIN)");
         addUse(pinUse, cf.getSymbol("ENC_SW_PIN", ""), "押しSW(ENC_SW_PIN)");
-        if (cf.getLong("NIGHTLIGHT_ENABLE", 0) == 1)
-            addUse(pinUse, cf.getSymbol("WS_DIN_PIN", ""), "常夜灯(WS_DIN_PIN)");
+        boolean nlSingle = "NL_TYPE_SINGLE".equals(cf.getSymbol("NIGHTLIGHT_TYPE", "NL_TYPE_WS2812"));
+        if (cf.getLong("NIGHTLIGHT_ENABLE", 0) == 1) {
+            if (nlSingle) addUse(pinUse, cf.getSymbol("NL_LED_PIN", ""), "常夜灯単色LED(NL_LED_PIN)");
+            else          addUse(pinUse, cf.getSymbol("WS_DIN_PIN", ""), "常夜灯WS2812(WS_DIN_PIN)");
+        }
         if (tempOn && tempExt)
             addUse(pinUse, cf.getSymbol("TEMP_SENSE_PIN", ""), "外付け温度(TEMP_SENSE_PIN)");
         if (cf.getLong("WARN_LED_ENABLE", 0) == 1)
@@ -302,6 +325,53 @@ public final class ConfigSchema {
         if (tempOn && "TEMP_SOURCE_DIE".equals(cf.getSymbol("TEMP_SOURCE", "")))
             out.add(new Issue(false, "TEMP_SOURCE=ダイ推定 は誤遮断のおそれ。実測NTC(EXTERNAL)推奨"));
 
+        // ---- 単色LED常夜灯 / 深い低電力の整合 (firmware pins.h / lowpower.h と対応) ----
+        boolean nlOn = cf.getLong("NIGHTLIGHT_ENABLE", 0) == 1;
+        if (nlOn && nlSingle) {
+            long onMs = cf.getLong("NL_ON_MS", 100), perS = cf.getLong("NL_PERIOD_S", 5);
+            if (onMs >= perS * 1000)
+                out.add(new Issue(true, "常夜灯単色LED: NL_ON_MS (" + onMs + ") は NL_PERIOD_S*1000 (" + (perS * 1000) + ") 未満にしてください"));
+        }
+        if (cf.getLong("LOW_POWER_MODE", 0) == 1) {
+            if (!(nlOn && nlSingle))
+                out.add(new Issue(true, "深い低電力: 常夜灯タイプを②単色LED(NL_TYPE_SINGLE)にしてください"));
+            if (cf.getLong("NL_USE_PWM", 0) != 0)
+                out.add(new Issue(true, "深い低電力: NL_USE_PWM=0(PWM無し)が必要です(PWM明滅は演出=非対象)"));
+            long perS = cf.getLong("NL_PERIOD_S", 5);
+            if (perS < 1 || perS > 30)
+                out.add(new Issue(true, "深い低電力: NL_PERIOD_S は 1..30 秒にしてください(AWU 1サイクル上限)"));
+            if (cf.getLong("WDT_ENABLE", 0) == 1)
+                out.add(new Issue(true, "深い低電力: WDT_ENABLE=0 が必要(IWDGがStandby中にリセットしうる)"));
+        }
+
         return out;
+    }
+
+    /**
+     * CR2032 の待機時間おおよその目安(1kΩ/緑LED前提)。常夜灯=②単色LED のときのみ算出。
+     * WS2812 や常夜灯無効なら null(電圧不足/対象外)。GUI の設定指針・自己テスト用の純関数。
+     *
+     * <p>前提(概算): LED 900µA(1kΩ,緑,3V) / Standby 10µA / アクティブ48MHz 8mA /
+     * 点灯中Sleep@48MHz 3mA / 起床overhead 5ms / CR2032 220mAh。★実機で要確認。</p>
+     */
+    public static String batteryEstimate(ConfigFile cf) {
+        if (cf.getLong("NIGHTLIGHT_ENABLE", 0) != 1) return null;
+        if (!"NL_TYPE_SINGLE".equals(cf.getSymbol("NIGHTLIGHT_TYPE", "NL_TYPE_WS2812")))
+            return "CR2032目安: WS2812は電圧不足のため対象外";
+        double periodMs = Math.max(1, cf.getLong("NL_PERIOD_S", 5)) * 1000.0;
+        double onMs = Math.max(1, cf.getLong("NL_ON_MS", 100));
+        double duty = Math.min(1.0, onMs / periodMs);
+        boolean deep = cf.getLong("LOW_POWER_MODE", 0) == 1 && cf.getLong("NL_USE_PWM", 0) == 0;
+        final double I_LED = 900, I_STBY = 10, I_ACT48 = 8000, I_SLEEP48 = 3000, WAKE_OVH = 5, CAP = 220000; // µA / µAh
+        double ledAvg = I_LED * duty;
+        double mcuAvg; String mode;
+        if (deep) { mcuAvg = I_SLEEP48 * ((onMs + WAKE_OVH) / periodMs) + I_STBY; mode = "深い低電力"; }
+        else       { mcuAvg = I_ACT48; mode = "通常(MCU常時稼働=電池非推奨)"; }
+        double total = ledAvg + mcuAvg;
+        double hours = CAP / total;
+        String life = (hours >= 24 * 30) ? String.format("約%.1fヶ月", hours / 24 / 30)
+                    : (hours >= 24)      ? String.format("約%.0f日", hours / 24)
+                                         : String.format("約%.0f時間", hours);
+        return String.format("CR2032目安 ≈ %s (1kΩ/緑LED, %s, 平均≈%.0fµA)", life, mode, total);
     }
 }

@@ -138,7 +138,12 @@
 
 /* 任意機能: 有効なときだけピンビットを寄与 */
 #if NIGHTLIGHT_ENABLE
-  #define LB_BIT_NL LB_PINBIT(WS_DIN_PIN)
+  #if NIGHTLIGHT_TYPE == NL_TYPE_SINGLE
+    #define LB_NL_PIN NL_LED_PIN      /* 単色LED常夜灯の専用ピン */
+  #else
+    #define LB_NL_PIN WS_DIN_PIN      /* WS2812 データピン */
+  #endif
+  #define LB_BIT_NL LB_PINBIT(LB_NL_PIN)
 #else
   #define LB_BIT_NL 0u
 #endif
@@ -162,7 +167,7 @@ _Static_assert(LB_PIN_IS_SOP8(ENC_B_PIN),  "ENC_B_PIN は SOP8 ピンにして�
 _Static_assert(LB_PIN_IS_SOP8(ENC_SW_PIN), "ENC_SW_PIN は SOP8 ピンにしてください");
 _Static_assert(LB_PIN_IS_SOP8(PWM_PIN),    "PWM_PIN は SOP8 ピンにしてください");
 #if NIGHTLIGHT_ENABLE
-_Static_assert(LB_PIN_IS_SOP8(WS_DIN_PIN), "WS_DIN_PIN は SOP8 ピンにしてください");
+_Static_assert(LB_PIN_IS_SOP8(LB_NL_PIN), "nightlight pin (WS_DIN_PIN / NL_LED_PIN) must be a SOP8 pin");
 #endif
 #if WARN_LED_ENABLE
 _Static_assert(LB_PIN_IS_SOP8(WARN_LED_PIN), "WARN_LED_PIN は SOP8 ピンにしてください");
@@ -176,7 +181,7 @@ _Static_assert(LB_USED_SUM == LB_USED_OR,
 
 /* SWIO(PD1) は書込/printf 用の予約ピン。機能割当は非推奨(警告のみ) */
 #if (ENC_A_PIN==PD1)||(ENC_B_PIN==PD1)||(ENC_SW_PIN==PD1)||(PWM_PIN==PD1)|| \
-    (NIGHTLIGHT_ENABLE && (WS_DIN_PIN==PD1))|| \
+    (NIGHTLIGHT_ENABLE && (LB_NL_PIN==PD1))|| \
     (WARN_LED_ENABLE && (WARN_LED_PIN==PD1))|| \
     (TEMP_PROTECT_ENABLE && (TEMP_SOURCE==TEMP_SOURCE_EXTERNAL) && (TEMP_SENSE_PIN==PD1))
   #warning "PD1 は SWIO(書込/debugprintf)予約ピンです。機能割当は書込/デバッグと競合します"

@@ -124,12 +124,22 @@ $$\text{temp} = \text{TEMP\_CAL\_T0\_C} + \frac{(\text{adc} - \text{TEMP\_CAL\_A
 4. Set `WARN_TEMP_C` to target limit ($80^\circ\text{C}$). Although NTCs are non-linear, a 2-point calibration near the operating limit ($80^\circ\text{C}$) provides sufficient accuracy for over-temperature warnings.
 5. Revert `DEBUG_LOG=0` for production release.
 
-## WS2812 / SK6812 Nightlight
+## Nightlight
+
+Two nightlight types are selectable with `NIGHTLIGHT_TYPE`:
+①`NL_TYPE_WS2812` (color, effect-priority — the existing WS2812/SK6812 driver) and
+②`NL_TYPE_SINGLE` (single-color LED on a dedicated pin, blinked `NL_ON_MS` every `NL_PERIOD_S`).
+Only **② single LED with `NL_USE_PWM=0`** is eligible for the deep low-power (Standby) mode below.
 
 | Item | Default | Description |
 |------|---------|-------------|
 | `NIGHTLIGHT_ENABLE` | `1` | Enables nightlight feature |
-| `WS_DIN_PIN` | `PC4` | Data line GPIO (any SOP8 pin; GPIO port/number derived automatically) |
+| `NIGHTLIGHT_TYPE` | `NL_TYPE_WS2812` | ①`NL_TYPE_WS2812` (color/effect) or ②`NL_TYPE_SINGLE` (single-color LED, low-power) |
+| **②** `NL_LED_PIN` | `PC4` | Single-LED dedicated pin (any SOP8 GPIO) |
+| **②** `NL_PERIOD_S` | `5` | Blink period in **seconds** (`1..60`; `1..30` when deep low-power is on) |
+| **②** `NL_ON_MS` | `100` | On-time per blink in ms (must be `< NL_PERIOD_S*1000`) |
+| **②** `NL_USE_PWM` | `0` | `0` = GPIO on/off (lowest power, deep-sleep eligible) / `1` = soft-PWM breathing (effect; not deep-sleep) |
+| **①** `WS_DIN_PIN` | `PC4` | WS2812 data line GPIO (any SOP8 pin; GPIO port/number derived automatically) |
 | `WS_COUNT` | `1` | Number of addressable LEDs |
 | `NIGHTLIGHT_PERIOD_MS` | `4000` | Duration for 1 full bright $\rightarrow$ dim breathing cycle in ms (**2 to 60000**). Upper limit provides safety margin against 32-bit SysTick wrap ($\approx 89.5\text{s}$) |
 | `NIGHTLIGHT_INTERVAL_MS` | `3000` | Complete OFF delay following breathing cycle in ms (**$\le 60000$**) |
@@ -166,6 +176,19 @@ Rules enforced at compile time (and mirrored in the GUI config editor):
 
 *Note:* Software-only features (die-estimated temperature, thermal cutoff/throttling, watchdog, EMI spread spectrum) **need no GPIO pin**. To run more pin-bound features simultaneously than SOP8 allows, switch to a larger package such as TSSOP20 / QFN (CH32V003F4P6) — that package's pin set is out of scope for this table.
 
+## Deep Low-Power Mode (Standby + AWU) — experimental, hardware-unverified
+
+For battery use, `LOW_POWER_MODE=1` puts the MCU into Standby between single-LED nightlight blinks
+and wakes periodically via AWU; a push-switch (EXTI) wakes it to normal dimmer operation for a while.
+
+| Item | Default | Description |
+|------|---------|-------------|
+| `LOW_POWER_MODE` | `0` | `1` = deep-sleep nightlight. **Requires** `NIGHTLIGHT_TYPE=NL_TYPE_SINGLE`, `NL_USE_PWM=0`, `NL_PERIOD_S≤30`, `WDT_ENABLE=0` (enforced at compile time and in the GUI) |
+| `LOWPWR_ACTIVE_WINDOW_S` | `30` | Seconds of normal operation kept after a push-switch wake before returning to sleep |
+
+- **Reflash safety**: hold the push-switch while powering on → the device stays in normal mode (does not sleep), so SWD can attach for flashing.
+- **`LOW_POWER_MODE=0` (default) is byte-identical to the previous firmware.** The Standby/AWU/EXTI path is experimental and **must be verified on hardware** (Standby wake behavior, AWU period, actual current).
+
 ## Battery Operation (supplementary — design estimates)
 
 LightBox is primarily designed for **continuous power**; battery use is feasible for a low-duty
@@ -177,10 +200,12 @@ nightlight. The figures below are **design estimates** (confirm on hardware):
 - **Duty**: e.g. 100 ms on every 5 s.
 - **`PWM_ON_TIME_S` (shipped)**: the auto-off timer lowers average on-time and thus battery drain,
   independent of any sleep mode — the concrete lever available today.
-- **Deep low-power (roadmap, not yet implemented)**: with a Standby + AWU periodic-wake design
-  (encoder on EXTI, encoder pull-ups switched to analog-input during sleep so they stop leaking),
-  a single **CR2032 (~220 mAh)** is estimated at **~6.5 months** for the 1 kΩ / 100 ms-per-5 s case.
-  **Without** that sleep mode (MCU kept at 48 MHz) battery life is far shorter.
+- **Deep low-power (`LOW_POWER_MODE`, experimental — now implemented)**: Standby + AWU periodic
+  wake, push-switch (EXTI) wake, encoder pull-ups released to analog-input during sleep. For
+  1 kΩ / 100 ms-per-5 s, a single **CR2032 (~220 mAh)** is estimated at **~3–4 months as implemented**
+  (the MCU sleeps at 48 MHz during the on-time). Lowering the clock during the on-time (future)
+  would extend this toward ~6.5 months. **Without** deep low-power (MCU at 48 MHz always) a coin
+  cell lasts only ~a day. The GUI config editor shows this CR2032 estimate live (1 kΩ assumption).
 - **Cell choice**: 2×CR2032 in *series* raises voltage (6 V) but **not capacity**, and 6 V exceeds
   the CH32V003 5.5 V maximum (needs regulation). For longer life prefer *parallel* cells (~440 mAh)
   or a larger cell (CR2450 ~600 mAh ≈ ~2 years est.). Add a 10–100 µF buffer cap to handle CR2032

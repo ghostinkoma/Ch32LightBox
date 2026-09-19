@@ -46,6 +46,26 @@ public final class ConfigSchemaCheck {
         List<ConfigSchema.Issue> is4 = validateVariant(v4);
         check("警告灯=PD1 で SWIO 警告(エラーではない)", hasWarn(is4, "SWIO") && !hasError(is4, "PD1"), is4);
 
+        // (6) 深い低電力 + WS2812 → 非対応でエラー
+        List<ConfigSchema.Issue> is6 = validateVariant(replace(baseLines, "LOW_POWER_MODE", "1"));
+        check("LOW_POWER_MODE+WS2812 でエラー検出", hasError(is6, "単色LED") || hasError(is6, "深い低電力"), is6);
+
+        // (7) 深い低電力 正常構成 → 電池目安が「ヶ月」オーダ
+        List<String> v7 = replace(replace(replace(baseLines,
+                "NIGHTLIGHT_TYPE", "NL_TYPE_SINGLE"), "LOW_POWER_MODE", "1"), "WDT_ENABLE", "0");
+        String est7 = estimateVariant(v7);
+        checkS("深い低電力の電池目安が『ヶ月』オーダ", est7 != null && est7.contains("ヶ月"), est7);
+
+        // (8) 単色LED 非deep(MCU常時) → 目安が短命(時間/日)
+        String est8 = estimateVariant(replace(baseLines, "NIGHTLIGHT_TYPE", "NL_TYPE_SINGLE"));
+        checkS("非deep単色の電池目安が短命(時間/日)",
+                est8 != null && (est8.contains("時間") || est8.contains("日")), est8);
+
+        // (9) 単色LED NL_LED_PIN=PC1(=ENC_B) 衝突
+        List<ConfigSchema.Issue> is9 = validateVariant(
+                replace(replace(baseLines, "NIGHTLIGHT_TYPE", "NL_TYPE_SINGLE"), "NL_LED_PIN", "PC1"));
+        check("単色LED NL_LED_PIN=PC1 衝突検出", hasError(is9, "衝突"), is9);
+
         System.out.println(failures == 0 ? "ALL PASS" : ("FAILURES=" + failures));
         System.exit(failures == 0 ? 0 : 1);
     }
@@ -61,11 +81,20 @@ public final class ConfigSchemaCheck {
     }
 
     private static List<ConfigSchema.Issue> validateVariant(List<String> lines) throws IOException {
-        Path tmp = Files.createTempFile("cfgcheck", ".h");
+        ConfigFile cf = loadVariant(lines);
+        return ConfigSchema.validate(cf);
+    }
+
+    private static String estimateVariant(List<String> lines) throws IOException {
+        return ConfigSchema.batteryEstimate(loadVariant(lines));
+    }
+
+    private static ConfigFile loadVariant(List<String> lines) throws IOException {
+        Path tmp = Files.createTempFile("cfgchk", ".h");
         Files.write(tmp, String.join("\n", lines).getBytes(StandardCharsets.UTF_8));
         ConfigFile cf = ConfigFile.load(tmp);
         Files.deleteIfExists(tmp);
-        return ConfigSchema.validate(cf);
+        return cf;
     }
 
     private static int errorCount(List<ConfigSchema.Issue> is) {
@@ -84,5 +113,10 @@ public final class ConfigSchemaCheck {
             failures++;
             for (ConfigSchema.Issue i : is) System.out.println("      [" + (i.error ? "ERR " : "WARN") + "] " + i.message);
         }
+    }
+
+    private static void checkS(String name, boolean ok, String detail) {
+        System.out.println((ok ? "PASS " : "FAIL ") + name + "  -> " + detail);
+        if (!ok) failures++;
     }
 }

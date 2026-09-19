@@ -42,6 +42,7 @@ public final class ConfigEditor extends JFrame {
     private final JTextField pathField = new JTextField();
     private final JTextArea issues = new JTextArea(6, 40);
     private final JCheckBox advancedMode = new JCheckBox("上級者モード（ピン等の固定項目を編集可能に）");
+    private final JLabel estimateLabel = new JLabel(" ");   // CR2032 電池寿命の目安(ライブ)
 
     public ConfigEditor(File initialPath) {
         super("LightBox config.h エディタ");
@@ -96,7 +97,11 @@ public final class ConfigEditor extends JFrame {
         // 下: 操作 + 検証結果
         JPanel bottom = new JPanel(new BorderLayout(6, 6));
         advancedMode.addActionListener(e -> updateAdvancedEnabled());
-        bottom.add(advancedMode, BorderLayout.NORTH);
+        JPanel north = new JPanel(new BorderLayout());
+        north.add(advancedMode, BorderLayout.NORTH);
+        estimateLabel.setForeground(new Color(0, 110, 0));
+        north.add(estimateLabel, BorderLayout.SOUTH);
+        bottom.add(north, BorderLayout.NORTH);
 
         issues.setEditable(false);
         issues.setLineWrap(true);
@@ -116,6 +121,23 @@ public final class ConfigEditor extends JFrame {
         root.add(bottom, BorderLayout.SOUTH);
         setContentPane(root);
         updateAdvancedEnabled();
+        attachEstimateListeners();
+    }
+
+    /** 関連ウィジェット変更時に電池寿命の目安をライブ再計算。 */
+    private void attachEstimateListeners() {
+        javax.swing.event.ChangeListener cl = e -> updateEstimate();
+        java.awt.event.ActionListener al = e -> updateEstimate();
+        for (JSpinner sp : ints.values()) sp.addChangeListener(cl);
+        for (JCheckBox cb : bools.values()) cb.addActionListener(al);
+        for (JComboBox<Item> cx : combos.values()) cx.addActionListener(al);
+    }
+
+    private void updateEstimate() {
+        if (cf == null) { estimateLabel.setText(" "); return; }
+        try { applyWidgets(); } catch (RuntimeException ex) { return; }
+        String s = ConfigSchema.batteryEstimate(cf);
+        estimateLabel.setText(s == null ? "（電池目安: 常夜灯=②単色LED のとき表示）" : s);
     }
 
     private void addFieldRow(JPanel panel, int row, ConfigField f) {
@@ -189,6 +211,7 @@ public final class ConfigEditor extends JFrame {
             pathField.setText(configPath.getAbsolutePath());
             issues.setText("読み込みました: " + configPath.getAbsolutePath() + "\n");
             auditRanges();
+            updateEstimate();
         } catch (IOException ex) {
             appendIssue("読み込み失敗: " + ex.getMessage());
         }
@@ -277,6 +300,7 @@ public final class ConfigEditor extends JFrame {
         if (list.isEmpty()) sb.append("問題なし。保存できます。\n");
         else sb.insert(0, "エラー " + errors + " / 警告 " + warns + "\n");
         issues.setText(sb.toString());
+        updateEstimate();
         return errors == 0;
     }
 

@@ -38,8 +38,15 @@
 #include "wdt.h"
 #endif
 #if NIGHTLIGHT_ENABLE
-#define WS2812BSIMPLE_IMPLEMENTATION
-#include "nightlight.h"
+  #if NIGHTLIGHT_TYPE == NL_TYPE_WS2812
+    #define WS2812BSIMPLE_IMPLEMENTATION
+    #include "nightlight.h"          /* ①WS2812/SK6812(従来・演出優先) */
+  #else
+    #include "nl_single.h"           /* ②単色LED(専用ピン, n秒/x ms/PWM有無) */
+  #endif
+#endif
+#if LOW_POWER_MODE
+  #include "lowpower.h"              /* 深い低電力(Standby+AWU)常夜灯 ★実験的 */
 #endif
 
 /* デバッグログ: 既定OFF。printf はブロッキングでホスト未接続だと停滞し、
@@ -368,13 +375,17 @@ int main(void)
     temp_init();
 #endif
 #if NIGHTLIGHT_ENABLE
+  #if NIGHTLIGHT_TYPE == NL_TYPE_WS2812
     nightlight_init();
+  #else
+    nl_single_init();
+  #endif
 #endif
 #if WDT_ENABLE
     wdt_init();            /* 全初期化後に開始 */
 #endif
 
-#if NIGHTLIGHT_ENABLE && (NIGHTLIGHT_BOOT_TEST_MS > 0)
+#if NIGHTLIGHT_ENABLE && (NIGHTLIGHT_TYPE == NL_TYPE_WS2812) && (NIGHTLIGHT_BOOT_TEST_MS > 0)
     /* 起動セルフテスト: 常夜灯LEDを一定時間点灯して配線/タイミングを切り分け */
     nightlight_test_on();
     {
@@ -390,6 +401,18 @@ int main(void)
     /* 起動(電源投入): 復元輝度へソフトスタート・フェードイン */
     output_begin_fade(SOFT_START_ON);
     if (g_on) autooff_arm();               /* 点灯状態で起動したら自動消灯カウント開始 */
+
+#if LOW_POWER_MODE
+    /* 深い低電力: 起動時に押しSW非押下なら常夜灯スリープサイクルへ。
+     * 押下(=起動時ホールド or 押しSW起水)なら通常アクティブモードに留まる(reflash-safe)。 */
+    lp_init();
+    if (!lp_button_down()) {
+        lowpower_nightlight_cycle();       /* 押しSW起水で戻る(reset復帰時は main 再実行で同判断) */
+        encoder_init();                    /* アナログ化したエンコーダピンを通常入力へ戻す */
+        output_begin_fade(SOFT_START_ON);
+    }
+    uint32_t lpActivityTick = SysTick->CNT; /* アクティブ窓のアクティビティ計時 */
+#endif
 
     DBG("LightBox CH32V003: CIE-L* dimmer  level=%u/%u top=%u rev=%u half=%u lock=%ums snap=%u/%ums\n",
         g_level, LEVELS, (unsigned)PWM_TOP,
@@ -470,6 +493,9 @@ int main(void)
 #endif
                 output_retarget();
                 if (g_on) autooff_arm();           /* 操作があったら自動消灯カウントをリセット(延長) */
+#if LOW_POWER_MODE
+                lpActivityTick = now;              /* 操作 → アクティブ窓を延長 */
+#endif
 #if STORE_ENABLE
                 dirty = 1; dirtyTick = now;        /* 変更 → 5秒後にコミット予約 */
 #endif
@@ -488,6 +514,9 @@ int main(void)
                 g_on = !g_on;
                 output_begin_fade(g_on ? SOFT_START_ON : SOFT_START_OFF);  /* ソフトスタート */
                 if (g_on) autooff_arm();                /* ONトグルで自動消灯カウント開始 */
+#if LOW_POWER_MODE
+                lpActivityTick = SysTick->CNT;          /* 押しSW操作 → アクティブ窓を延長 */
+#endif
                 DBG("output %s\n", g_on ? "ON" : "OFF");
 #if STORE_ENABLE
                 dirty = 1; dirtyTick = SysTick->CNT;    /* ON/OFF も保存対象 → コミット予約 */
@@ -545,8 +574,26 @@ int main(void)
 #endif
 
 #if NIGHTLIGHT_ENABLE
-        /* --- 常夜灯: 本体が完全に暗い(消灯意図かつフェード完了で輝度0)ときだけ呼吸 --- */
-        nightlight_update(((!g_on || g_level == 0) && g_dispLx == 0) ? 1u : 0u);
+        /* --- 常夜灯: 本体が完全に暗い(消灯意図かつフェード完了で輝度0)ときだけ動作 --- */
+        {
+            uint8_t nl_dark = ((!g_on || g_level == 0) && g_dispLx == 0) ? 1u : 0u;
+  #if NIGHTLIGHT_TYPE == NL_TYPE_WS2812
+            nightlight_update(nl_dark);      /* ①WS2812: 呼吸 */
+  #else
+            nl_single_update(nl_dark);       /* ②単色LED: 周期点灯 */
+  #endif
+        }
+#endif
+
+#if LOW_POWER_MODE
+        /* --- アクティブ窓: 無操作が LOWPWR_ACTIVE_WINDOW_S 続き、本体消灯なら再びスリープへ --- */
+        if (!g_on &&
+            (uint32_t)(SysTick->CNT - lpActivityTick) >= Ticks_from_Ms((uint32_t)LOWPWR_ACTIVE_WINDOW_S * 1000u)) {
+            lowpower_nightlight_cycle();     /* 押しSW起水で戻る */
+            encoder_init();
+            output_begin_fade(SOFT_START_ON);
+            lpActivityTick = SysTick->CNT;
+        }
 #endif
     }
 }

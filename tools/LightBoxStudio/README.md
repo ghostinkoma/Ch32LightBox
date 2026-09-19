@@ -86,9 +86,10 @@ Five JAR files will be generated in `dist/` (pre-generated JARs are also bundled
 
 ## Features of config.h Editor
 
-- **Schema-Driven**: Form-edit all 57 settings with type-specific widgets (numeric / checkbox / dropdown / pin / color).
+- **Schema-Driven**: Form-edit all 64 settings with type-specific widgets (numeric / checkbox / dropdown / pin / color).
   Definitions correspond to [`documents/CONFIG_REFERENCE.md`](../../documents/CONFIG_REFERENCE.md) and `source/config.h`.
 - **Feature ↔ Pin Assignment**: Per-feature pin dropdowns are filtered by hardware capability — `PWM_PIN` lists only PWM-capable pins, `TEMP_SENSE_PIN` only ADC-capable pins. Pin conflicts (two features on one pin), capability violations, and SWIO(PD1) use are flagged before save, mirroring the firmware `source/pins.h` compile-time checks.
+- **Nightlight type & deep low-power**: choose ①WS2812 or ②single-color LED; validation enforces that deep low-power (`LOW_POWER_MODE`) is used only with single-LED + no-PWM + `NL_PERIOD_S≤30` + `WDT_ENABLE=0`. A **live CR2032 battery-life estimate** (1 kΩ assumption) is shown for the single-LED nightlight to guide config.
 - **Non-Destructive Editing**: Replaces **only value tokens** in `#define KEY VALUE`, preserving comments, enum definitions, empty lines, `u`/`L` suffixes, and `(-300)` formatting (without regenerating full text). Creates `config.h.bak` before saving.
 - **Cross-Constraint Validation** (Pre-save validation):
   - When `PWM_SPREAD_SPECTRUM=1`: `PWM_TOP+PWM_SPREAD_RANGE≤65535` and `RANGE<PWM_TOP`
