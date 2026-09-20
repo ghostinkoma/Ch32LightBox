@@ -33,13 +33,18 @@ public final class ConfigSchema {
         List<ConfigField> f = new ArrayList<>();
 
         String S;
-        // ---- ピン割当 ----
-        S = "ピン割当 (HW結線固定・上級者向け)";
+        // ---- ピン割当（全ピン機能を集約 / チェックを外すと固定ロック） ----
+        S = "ピン割当 (全ピン機能を集約)";
         f.add(pin("PWM_PIN", S, "本体LED PWM出力", PINS_PWM).advanced()
                 .help("PWM可能ピンのみ。PC2=既定(TIM2_CH2,実機検証済)。他はコンパイル対応・実機未検証").build());
         f.add(pin("ENC_A_PIN", S, "エンコーダ A 相").advanced().help("内部プルアップ。HW結線と一致必須").build());
         f.add(pin("ENC_B_PIN", S, "エンコーダ B 相").advanced().help("内部プルアップ。HW結線と一致必須").build());
         f.add(pin("ENC_SW_PIN", S, "押しSW").advanced().help("内部プルアップ, 押下=Low").build());
+        // 常夜灯のピンもここへ集約（点灯周期/PWM有無 等の機能パラメータは「常夜灯」セクション）
+        f.add(pin("NL_LED_PIN", S, "常夜灯② 単色LED ピン", PINS_ALL).advanced()
+                .help("NIGHTLIGHT_TYPE=単色LED のとき使用。任意のSOP8 GPIO").build());
+        f.add(pin("WS_DIN_PIN", S, "常夜灯① WS2812 データ線", PINS_ALL).advanced()
+                .help("NIGHTLIGHT_TYPE=WS2812 のとき使用。port/番号は自動導出").build());
 
         // ---- PWM ----
         S = "PWM (16bit TIM2)";
@@ -154,17 +159,14 @@ public final class ConfigSchema {
                 .option("NL_TYPE_WS2812", "①WS2812/SK6812 (演出優先)")
                 .option("NL_TYPE_SINGLE", "②単色LED (低電力・専用ピン)")
                 .help("②単色LED+PWM無しのときだけ深い低電力(Standby)の対象").build());
-        // ②単色LED (NIGHTLIGHT_TYPE=NL_TYPE_SINGLE)
-        f.add(pin("NL_LED_PIN", S, "[単色]専用ピン", PINS_ALL).help("任意のSOP8 GPIO").build());
+        // ②単色LED 機能パラメータ (NIGHTLIGHT_TYPE=NL_TYPE_SINGLE)。※ピンは「ピン割当」セクションに集約。
         f.add(ConfigField.of("NL_PERIOD_S", ConfigField.Type.INT).section(S).label("[単色]点灯周期")
                 .range(1, 60).unit("s").help("n秒おき。深い低電力時は1..30").build());
         f.add(ConfigField.of("NL_ON_MS", ConfigField.Type.INT).section(S).label("[単色]点灯時間")
                 .range(1, 60000).unit("ms").help("x ms。NL_PERIOD_S*1000 未満").build());
         f.add(bool("NL_USE_PWM", S, "[単色]PWM明滅")
                 .help("0=GPIO単純ON/OFF(最小電力/deep sleep可) 1=ソフトPWM明滅(演出/不可)").build());
-        // ①WS2812 パラメータ (以下 従来)
-        f.add(pin("WS_DIN_PIN", S, "[WS2812]データ線GPIO", PINS_ALL)
-                .help("port/番号は自動導出。任意のSOP8ピン可").build());
+        // ①WS2812 パラメータ (データ線ピンは「ピン割当」セクションに集約)
         f.add(ConfigField.of("WS_COUNT", ConfigField.Type.INT).section(S).label("LED個数")
                 .range(1, 64).build());
         f.add(ConfigField.of("NIGHTLIGHT_PERIOD_MS", ConfigField.Type.INT).section(S).label("明↔暗周期")
