@@ -35,15 +35,13 @@ public final class ConfigEditor extends JFrame {
     private final Map<String, JCheckBox> bools = new LinkedHashMap<>();
     private final Map<String, JComboBox<Item>> combos = new LinkedHashMap<>();
     private ColorField colorField;              // WS_MAX_COLOR
-    private final java.util.List<JComponent> advancedComps = new java.util.ArrayList<>();
+    private final PinMapPanel pinMap = new PinMapPanel();   // ピン中心の割当UI(SVG準拠)
 
     private File configPath;
     private ConfigFile cf;
     private boolean loading = false;             // loadWidgets 中はリスナ由来の再計算/適用を抑止
     private final JTextField pathField = new JTextField();
     private final JTextArea issues = new JTextArea(6, 40);
-    // 既定ON=ピン割当を最初から編集可能に(オフで固定ピンをロック)。ピン割当はこのツールの主機能。
-    private final JCheckBox advancedMode = new JCheckBox("ピン等の固定項目を編集する（オフでロック）", true);
     private final JLabel estimateLabel = new JLabel(" ");   // CR2032 電池寿命の目安(ライブ)
 
     public ConfigEditor(File initialPath) {
@@ -78,6 +76,10 @@ public final class ConfigEditor extends JFrame {
         // 中央: セクション別フォーム
         JPanel form = new JPanel();
         form.setLayout(new BoxLayout(form, BoxLayout.Y_AXIS));
+        // 先頭に「ピン割り当て機能」(ピン中心UI)を配置。変更で電池目安も再計算。
+        pinMap.setOnChange(this::updateEstimate);
+        form.add(pinMap);
+        form.add(Box.createVerticalStrut(4));
         String currentSection = null;
         JPanel sectionPanel = null;
         int row = 0;
@@ -98,12 +100,8 @@ public final class ConfigEditor extends JFrame {
 
         // 下: 操作 + 検証結果
         JPanel bottom = new JPanel(new BorderLayout(6, 6));
-        advancedMode.addActionListener(e -> updateAdvancedEnabled());
-        JPanel north = new JPanel(new BorderLayout());
-        north.add(advancedMode, BorderLayout.NORTH);
         estimateLabel.setForeground(new Color(0, 110, 0));
-        north.add(estimateLabel, BorderLayout.SOUTH);
-        bottom.add(north, BorderLayout.NORTH);
+        bottom.add(estimateLabel, BorderLayout.NORTH);
 
         issues.setEditable(false);
         issues.setLineWrap(true);
@@ -122,7 +120,6 @@ public final class ConfigEditor extends JFrame {
 
         root.add(bottom, BorderLayout.SOUTH);
         setContentPane(root);
-        updateAdvancedEnabled();
         attachEstimateListeners();
     }
 
@@ -159,7 +156,6 @@ public final class ConfigEditor extends JFrame {
         panel.add(helpLabel, hc);
 
         if (!f.help.isEmpty()) { editor.setToolTipText(f.help); label.setToolTipText(f.help); }
-        if (f.advanced) { advancedComps.add(editor); advancedComps.add(label); }
     }
 
     private JComponent createEditor(ConfigField f) {
@@ -241,6 +237,7 @@ public final class ConfigEditor extends JFrame {
             }
         }
         colorField.setDigits(currentColorDigits());
+        pinMap.load(cf);                 // ピン割当をファイルの *_PIN 群から復元
         } finally {
             loading = false;
         }
@@ -290,6 +287,7 @@ public final class ConfigEditor extends JFrame {
                     break;
             }
         }
+        pinMap.apply(cf);                // ピン割当を *_PIN 群へ書き戻す
     }
 
     // ---- 検証・保存 ----
@@ -297,7 +295,8 @@ public final class ConfigEditor extends JFrame {
     private boolean runValidate() {
         if (cf == null) { appendIssue("先に config.h を読み込んでください"); return false; }
         applyWidgets();
-        List<ConfigSchema.Issue> list = ConfigSchema.validate(cf);
+        List<ConfigSchema.Issue> list = new java.util.ArrayList<>(pinMap.issues(cf)); // ピン割当UIの検証を先頭に
+        list.addAll(ConfigSchema.validate(cf));
         StringBuilder sb = new StringBuilder();
         int errors = 0, warns = 0;
         for (ConfigSchema.Issue is : list) {
@@ -352,11 +351,6 @@ public final class ConfigEditor extends JFrame {
             pathField.setText(configPath.getAbsolutePath());
             reload();
         }
-    }
-
-    private void updateAdvancedEnabled() {
-        boolean en = advancedMode.isSelected();
-        for (JComponent c : advancedComps) c.setEnabled(en);
     }
 
     private void appendIssue(String s) { issues.append(s + "\n"); }

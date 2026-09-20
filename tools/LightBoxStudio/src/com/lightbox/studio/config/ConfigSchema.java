@@ -33,18 +33,10 @@ public final class ConfigSchema {
         List<ConfigField> f = new ArrayList<>();
 
         String S;
-        // ---- ピン割当（全ピン機能を集約 / チェックを外すと固定ロック） ----
-        S = "ピン割当 (全ピン機能を集約)";
-        f.add(pin("PWM_PIN", S, "本体LED PWM出力", PINS_PWM).advanced()
-                .help("PWM可能ピンのみ。PC2=既定(TIM2_CH2,実機検証済)。他はコンパイル対応・実機未検証").build());
-        f.add(pin("ENC_A_PIN", S, "エンコーダ A 相").advanced().help("内部プルアップ。HW結線と一致必須").build());
-        f.add(pin("ENC_B_PIN", S, "エンコーダ B 相").advanced().help("内部プルアップ。HW結線と一致必須").build());
-        f.add(pin("ENC_SW_PIN", S, "押しSW").advanced().help("内部プルアップ, 押下=Low").build());
-        // 常夜灯のピンもここへ集約（点灯周期/PWM有無 等の機能パラメータは「常夜灯」セクション）
-        f.add(pin("NL_LED_PIN", S, "常夜灯② 単色LED ピン", PINS_ALL).advanced()
-                .help("NIGHTLIGHT_TYPE=単色LED のとき使用。任意のSOP8 GPIO").build());
-        f.add(pin("WS_DIN_PIN", S, "常夜灯① WS2812 データ線", PINS_ALL).advanced()
-                .help("NIGHTLIGHT_TYPE=WS2812 のとき使用。port/番号は自動導出").build());
+        // ※ ピン割当（PWM_PIN / ENC_*_PIN / WS_DIN_PIN / NL_LED_PIN / TEMP_SENSE_PIN /
+        //   WARN_LED_PIN）は専用の「ピン割り当て機能」パネル(PinMapPanel, ピン中心UI)で編集する。
+        //   スキーマの validate()/batteryEstimate() は ConfigFile 上のこれらのキーを参照して
+        //   横断検証するため、フィールド定義はここには置かない。
 
         // ---- PWM ----
         S = "PWM (16bit TIM2)";
@@ -129,8 +121,7 @@ public final class ConfigSchema {
                 .range(0, 125).unit("℃").build());
         f.add(ConfigField.of("DIE_TAU_MS", ConfigField.Type.INT).section(S).label("[DIE]熱時定数")
                 .range(100, 600000).unit("ms").build());
-        f.add(pin("TEMP_SENSE_PIN", S, "[EXT]センサピン(ADC対応)", PINS_ADC)
-                .help("ADCチャネルは自動導出(PA2=0/PA1=1/PC4=2)").build());
+        // [EXT]センサピン(TEMP_SENSE_PIN) は「ピン割り当て機能」パネルで割当
         f.add(ConfigField.of("TEMP_CAL_T0_C", ConfigField.Type.INT).section(S).label("[EXT]校正基準温度")
                 .range(-40, 125).unit("℃").build());
         f.add(ConfigField.of("TEMP_CAL_ADC0", ConfigField.Type.INT).section(S).label("[EXT]T0時の生ADC")
@@ -150,7 +141,7 @@ public final class ConfigSchema {
         f.add(ConfigField.of("THERMAL_THROTTLE_MAX", ConfigField.Type.INT).section(S).label("スロットル上限")
                 .range(1, 99).unit("%").help("<100").build());
         f.add(bool("WARN_LED_ENABLE", S, "警告灯").help("過熱中にWARN_LED_PINをHigh").build());
-        f.add(pin("WARN_LED_PIN", S, "警告灯ピン").build());
+        // 警告灯ピン(WARN_LED_PIN) は「ピン割り当て機能」パネルで割当
 
         // ---- 常夜灯 ----
         S = "常夜灯";
@@ -199,17 +190,6 @@ public final class ConfigSchema {
                 .range(5, 60).unit("s").help("押しSW起水後に通常動作を維持する秒数").build());
 
         return f;
-    }
-
-    private static ConfigField.Builder pin(String key, String section, String label) {
-        return pin(key, section, label, PINS_ALL);
-    }
-
-    /** 能力で絞ったピン選択肢を持つフィールド（PWMはPINS_PWM、ADCはPINS_ADC 等）。 */
-    private static ConfigField.Builder pin(String key, String section, String label, String[] allowed) {
-        ConfigField.Builder b = ConfigField.of(key, ConfigField.Type.PIN).section(section).label(label);
-        for (String p : allowed) b.option(p, p);
-        return b;
     }
 
     private static void addUse(List<String[]> list, String pin, String label) {
