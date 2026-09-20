@@ -118,7 +118,7 @@ public final class ConfigSchema {
                 .range(0, 600000).unit("ms").build());
 
         // ---- 温度保護 ----
-        S = "温度保護 (既定OFF)";
+        S = "温度保護機能（実験的・既定OFF）";
         f.add(bool("TEMP_PROTECT_ENABLE", S, "過熱保護有効").help("既定0。実測NTCで守る時のみ1").build());
         f.add(ConfigField.of("TEMP_SOURCE", ConfigField.Type.ENUM).section(S).label("温度源")
                 .option("TEMP_SOURCE_DIE", "ダイ推定 (非推奨・誤遮断)")
