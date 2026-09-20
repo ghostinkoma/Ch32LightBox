@@ -39,9 +39,11 @@ public final class ConfigEditor extends JFrame {
 
     private File configPath;
     private ConfigFile cf;
+    private boolean loading = false;             // loadWidgets 中はリスナ由来の再計算/適用を抑止
     private final JTextField pathField = new JTextField();
     private final JTextArea issues = new JTextArea(6, 40);
-    private final JCheckBox advancedMode = new JCheckBox("上級者モード（ピン等の固定項目を編集可能に）");
+    // 既定ON=ピン割当を最初から編集可能に(オフで固定ピンをロック)。ピン割当はこのツールの主機能。
+    private final JCheckBox advancedMode = new JCheckBox("ピン等の固定項目を編集する（オフでロック）", true);
     private final JLabel estimateLabel = new JLabel(" ");   // CR2032 電池寿命の目安(ライブ)
 
     public ConfigEditor(File initialPath) {
@@ -134,7 +136,7 @@ public final class ConfigEditor extends JFrame {
     }
 
     private void updateEstimate() {
-        if (cf == null) { estimateLabel.setText(" "); return; }
+        if (loading || cf == null) { return; }   // ロード中は適用しない(値の取り違え防止)
         try { applyWidgets(); } catch (RuntimeException ex) { return; }
         String s = ConfigSchema.batteryEstimate(cf);
         estimateLabel.setText(s == null ? "（電池目安: 常夜灯=②単色LED のとき表示）" : s);
@@ -218,6 +220,8 @@ public final class ConfigEditor extends JFrame {
     }
 
     private void loadWidgets() {
+        loading = true;                 // ロード中はウィジェット変更リスナ(目安再計算=applyWidgets)を抑止
+        try {
         for (ConfigField f : schema) {
             if (!cf.has(f.key)) continue; // config.h に無いキーはスキップ
             switch (f.type) {
@@ -237,6 +241,9 @@ public final class ConfigEditor extends JFrame {
             }
         }
         colorField.setDigits(currentColorDigits());
+        } finally {
+            loading = false;
+        }
     }
 
     /** 読み込んだファイルの INT 値が範囲外だったら（=クランプ表示された）警告する。 */

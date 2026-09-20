@@ -10,6 +10,24 @@ Target: `tools/LightBoxStudio/` (integrated into `main`).
 
 ---
 
+## Fix (2026-09-20): pin assignment was not editable in the config editor
+
+Symptom: launching `LightBoxMenu.jar` → config editor, the essential pin dropdowns could not be
+assigned. Two causes, both fixed in `ConfigEditor.java`:
+
+1. **Pins were gated behind "advanced mode"** (`PWM_PIN` / `ENC_*_PIN` were `.advanced()` → disabled
+   until the checkbox was ticked). Pin assignment is the tool's main feature, so the toggle now
+   **defaults to ON** (relabeled "ピン等の固定項目を編集する（オフでロック）"); uncheck to lock.
+2. **Load-time value clobber**: the new live battery-estimate listeners fired during `loadWidgets()`
+   and made `applyWidgets()` overwrite `config` with not-yet-loaded default widget values, so pins
+   (and other fields) loaded incorrectly. Added a `loading` guard so widget-change listeners do not
+   apply/​recompute while loading.
+
+(Note: `Settings.projectDir()` already auto-detects `source/config.h` by walking up from the jar,
+so launching from `dist/` finds `config.h` without running setup.)
+
+---
+
 ## 1. Setting LEVELS to 128 or Higher in config.h Caused Build Failures at `_Static_assert`
 - **Symptom**: Compilation stopped with `lightbox.c:59: static assertion failed: "LEVELS ... 1..127"`.
 - **Cause**: The editor GUI schema range (`LEVELS` 1..255, etc.) conflicted with the firmware's `_Static_assert`.
