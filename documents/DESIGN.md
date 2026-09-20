@@ -3,6 +3,7 @@
 **English** · [日本語](DESIGN_JP.md) · [← README](../README.md)
 
 CH32V003 LED Dimmer. Documenting design decisions and rationale to ensure third-party reproducibility.
+Battery / low-power and LED-driver decisions are recorded separately in [POWER_AND_DRIVER.md](POWER_AND_DRIVER.md).
 
 ## Requirements
 - Input: Locally connected rotary encoder

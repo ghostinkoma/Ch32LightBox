@@ -180,6 +180,7 @@ SOP8 で足りないほど多機能を同時に使う場合は TSSOP20/QFN(F4P6)
 
 バッテリ向け。`LOW_POWER_MODE=1` で、単色LED常夜灯の点灯間は MCU を Standby にして AWU で周期起床。
 押しSW(EXTI)を押すと一定時間 通常ディマーとして動作する。
+設計根拠と LED ドライバの検討は [POWER_AND_DRIVER_JP.md](POWER_AND_DRIVER_JP.md)。
 
 | 項目 | 既定 | 説明 |
 |------|------|------|

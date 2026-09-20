@@ -3,6 +3,7 @@
 [English](DESIGN.md) · **日本語** · [← README](../README_JP.md)
 
 CH32V003 による LED 調光器。設計上の判断とその根拠を残す（第三者が再現できるように）。
+電池/低電力・LEDドライバの判断は [POWER_AND_DRIVER_JP.md](POWER_AND_DRIVER_JP.md) に別記。
 
 ## 要求
 - 入力: ローカル接続のロータリーエンコーダ

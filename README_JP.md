@@ -34,7 +34,8 @@
 | **押しSW** | 短押しで ON/OFF トグル（時間ベースデバウンス。フェード中の再操作も滑らかに追従） |
 
 全設定は **`source/config.h`** に集約（詳細は [CONFIG_REFERENCE_JP.md](documents/CONFIG_REFERENCE_JP.md)）。
-仕様の詳細は [SPEC_JP.md](documents/SPEC_JP.md)、設計判断は [DESIGN_JP.md](documents/DESIGN_JP.md)。
+仕様の詳細は [SPEC_JP.md](documents/SPEC_JP.md)、設計判断は [DESIGN_JP.md](documents/DESIGN_JP.md)、
+電池/低電力・LEDドライバの検討は [POWER_AND_DRIVER_JP.md](documents/POWER_AND_DRIVER_JP.md)。
 
 ## ピン割当（**SOP8 (J4M6) で全機能が載る**）
 
@@ -117,7 +118,7 @@ LightBox/
 │   ├─ nightlight.h    WS2812/SK6812 常夜灯
 │   ├─ funconfig.h     ch32fun 設定
 │   └─ Makefile
-├─ documents/     SPEC.md / CONFIG_REFERENCE.md / HARDWARE.md / DESIGN.md (+ *_JP.md)
+├─ documents/     SPEC.md / CONFIG_REFERENCE.md / HARDWARE.md / DESIGN.md / POWER_AND_DRIVER.md (+ *_JP.md)
 ├─ tools/         LightBoxStudio/ = GUIツール群 (config編集→ビルド→書込, VS Code不要)
 ├─ ldscript/      PlatformIO 用リンカスクリプト (lightbox_ch32v003.ld)
 ├─ PCB/           KiCad 基板一式 (LightBox/ = 回路図/PCB; AertWork.png; KiCad/ = FDS5680 lib)

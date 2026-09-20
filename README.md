@@ -31,7 +31,7 @@ To prioritize reproducing brightness as **perceived by the human eye**, the PWM 
 | **Push Switch** | Short press toggles ON/OFF (time-based debouncing; smoothly tracks re-triggering during active fades). |
 
 All configuration options are centralized in **`source/config.h`** (see [CONFIG_REFERENCE.md](documents/CONFIG_REFERENCE.md) for details).
-Detailed specifications are in [SPEC.md](documents/SPEC.md), and design decisions are in [DESIGN.md](documents/DESIGN.md).
+Detailed specifications are in [SPEC.md](documents/SPEC.md), design decisions are in [DESIGN.md](documents/DESIGN.md), and battery / low-power and LED-driver notes are in [POWER_AND_DRIVER.md](documents/POWER_AND_DRIVER.md).
 
 ## Pinout (**All features fit on SOP8 / J4M6**)
 
@@ -104,7 +104,7 @@ LightBox/
 │  ├─ nightlight.h    WS2812/SK6812 nightlight driver
 │  ├─ funconfig.h     ch32fun environment configuration
 │  └─ Makefile
-├─ documents/      SPEC.md / CONFIG_REFERENCE.md / HARDWARE.md / DESIGN.md (+ *_JP.md)
+├─ documents/      SPEC.md / CONFIG_REFERENCE.md / HARDWARE.md / DESIGN.md / POWER_AND_DRIVER.md (+ *_JP.md)
 ├─ tools/          LightBoxStudio/ = GUI toolset (config edit → build → flash, no VS Code)
 ├─ ldscript/       Linker script for PlatformIO (lightbox_ch32v003.ld)
 ├─ PCB/            KiCad board files (LightBox/ = Schematic/PCB; AertWork.png; KiCad/ = FDS5680 lib)

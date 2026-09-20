@@ -180,6 +180,7 @@ Rules enforced at compile time (and mirrored in the GUI config editor):
 
 For battery use, `LOW_POWER_MODE=1` puts the MCU into Standby between single-LED nightlight blinks
 and wakes periodically via AWU; a push-switch (EXTI) wakes it to normal dimmer operation for a while.
+Design rationale and the LED-driver discussion are in [POWER_AND_DRIVER.md](POWER_AND_DRIVER.md).
 
 | Item | Default | Description |
 |------|---------|-------------|
